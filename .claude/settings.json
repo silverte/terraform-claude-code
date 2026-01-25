@@ -10,16 +10,6 @@
           }
         ]
       }
-    ],
-    "PreCommit": [
-      {
-        "type": "command",
-        "command": "echo '🔍 Running Terraform validation...' && terraform fmt -check -recursive && terraform validate && echo '✅ Validation passed'"
-      },
-      {
-        "type": "command",
-        "command": "echo '🔒 Running security scan...' && tfsec . --minimum-severity HIGH --soft-fail && echo '✅ Security scan completed'"
-      }
     ]
   },
   "permissions": {
@@ -47,8 +37,5 @@
       "Bash(aws:organizations close-account)"
     ]
   },
-  "model": {
-    "default": "sonnet",
-    "thinking": "opus"
-  }
+  "model": "opus"
 }
