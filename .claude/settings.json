@@ -1,0 +1,54 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_FILE_PATH\" == *.tf ]]; then terraform fmt \"$CLAUDE_FILE_PATH\" 2>/dev/null || true; fi"
+          }
+        ]
+      }
+    ],
+    "PreCommit": [
+      {
+        "type": "command",
+        "command": "echo '🔍 Running Terraform validation...' && terraform fmt -check -recursive && terraform validate && echo '✅ Validation passed'"
+      },
+      {
+        "type": "command",
+        "command": "echo '🔒 Running security scan...' && tfsec . --minimum-severity HIGH --soft-fail && echo '✅ Security scan completed'"
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(terraform:*)",
+      "Bash(tfsec:*)",
+      "Bash(tflint:*)",
+      "Bash(checkov:*)",
+      "Bash(infracost:*)",
+      "Bash(git:*)",
+      "Bash(aws:sts get-caller-identity)",
+      "Bash(aws:organizations describe-*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(terraform apply)",
+      "Bash(terraform destroy)",
+      "Bash(aws:iam create-user)",
+      "Bash(aws:iam delete-user)",
+      "Bash(aws:organizations create-account)",
+      "Bash(aws:organizations close-account)"
+    ]
+  },
+  "model": {
+    "default": "sonnet",
+    "thinking": "opus"
+  }
+}
