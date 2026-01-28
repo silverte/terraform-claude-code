@@ -196,19 +196,23 @@ uvx --version
 | 서버 | 용도 | 활용 사례 |
 |------|------|-----------|
 | `awslabs.core-mcp-server` | AWS MCP 서버 조율 | 복잡한 워크플로우 계획 |
-| `awslabs.terraform-mcp-server` | Terraform AWS Provider 문서 검색 | WAF, ALB 등 리소스 설정 참조 |
+| `awslabs.terraform-mcp-server` | Terraform AWS Provider 문서 검색 | ALB, S3 등 리소스 설정 참조 |
 | `awslabs.aws-documentation-mcp-server` | AWS 공식 문서 검색 | 서비스 제한, API 레퍼런스 조회 |
+| `awslabs.well-architected-security-mcp-server` | Well-Architected Security Pillar 평가 | GuardDuty, Security Hub 보안 상태 분석 |
 
 ### 활용 예시
 ```
-# WAF 규칙 Terraform 코드 생성 시
-"AWS WAF 문서를 검색해서 SQL Injection 방어 규칙을 Terraform으로 작성해줘"
+# Well-Architected Security 평가 시
+"현재 AWS 계정의 Security Pillar 상태를 평가해줘"
 
 # Organizations SCP 작성 시
 "AWS Organizations SCP 베스트 프랙티스를 검색해서 루트 계정 사용 금지 SCP를 만들어줘"
 
 # 새로운 서비스 Terraform 코드 작성 시
 "EventBridge Scheduler의 최신 속성을 검색해서 Terraform 모듈을 만들어줘"
+
+# Well-Architected 기반 인프라 설계 시
+"Well-Architected Framework에 맞는 VPC 설계를 Terraform으로 작성해줘"
 ```
 
 ### MCP 서버 직접 테스트
