@@ -180,7 +180,49 @@ s3://{bucket}/
 | tf-cost-analyzer | 비용 분석 | "비용", "cost" |
 | tf-module-developer | 모듈 개발 | "모듈 만들어", "/tf-module" |
 
+## AWS MCP 서버 설정
+
+### 사전 요구사항
+```bash
+# uv 설치 (Python 패키지 관리자)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 설치 확인
+uvx --version
+```
+
+### 구성된 MCP 서버
+
+| 서버 | 용도 | 활용 사례 |
+|------|------|-----------|
+| `awslabs.core-mcp-server` | AWS MCP 서버 조율 | 복잡한 워크플로우 계획 |
+| `awslabs.terraform-mcp-server` | Terraform AWS Provider 문서 검색 | WAF, ALB 등 리소스 설정 참조 |
+| `awslabs.aws-documentation-mcp-server` | AWS 공식 문서 검색 | 서비스 제한, API 레퍼런스 조회 |
+
+### 활용 예시
+```
+# WAF 규칙 Terraform 코드 생성 시
+"AWS WAF 문서를 검색해서 SQL Injection 방어 규칙을 Terraform으로 작성해줘"
+
+# Organizations SCP 작성 시
+"AWS Organizations SCP 베스트 프랙티스를 검색해서 루트 계정 사용 금지 SCP를 만들어줘"
+
+# 새로운 서비스 Terraform 코드 작성 시
+"EventBridge Scheduler의 최신 속성을 검색해서 Terraform 모듈을 만들어줘"
+```
+
+### MCP 서버 직접 테스트
+```bash
+# Terraform MCP 서버 테스트
+uvx awslabs.terraform-mcp-server@latest
+
+# AWS Documentation MCP 서버 테스트
+uvx awslabs.aws-documentation-mcp-server@latest
+```
+
 ## 참고 문서
 - [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 - [AWS Organizations Best Practices](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_best-practices.html)
+- [AWS MCP Servers](https://awslabs.github.io/mcp/)
+- [Terraform MCP Server](https://awslabs.github.io/mcp/servers/terraform-mcp-server)
