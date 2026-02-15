@@ -1,0 +1,93 @@
+# =============================================================================
+# Compute Template - EC2, ECS, EKS, Lambda, Auto Scaling
+# =============================================================================
+
+compute:
+
+  ec2:
+    enabled: false
+    instances: []
+    # instances:
+    #   - name: "web-server"
+    #     instance_type: "t3.micro"
+    #     ami_filter: "amazon-linux-2023"
+    #     subnet_type: "private"                    # public | private
+    #     key_pair: ""
+    #     root_volume:
+    #       size: 20                                # GB
+    #       type: "gp3"
+    #       encrypted: true
+    #     security_group_rules:
+    #       ingress:
+    #         - port: 443
+    #           protocol: "tcp"
+    #           source: "0.0.0.0/0"
+    #       egress:
+    #         - port: 0
+    #           protocol: "-1"
+    #           destination: "0.0.0.0/0"
+
+  autoscaling:
+    enabled: false
+    # groups: []
+    #   - name: "web-asg"
+    #     instance_type: "t3.small"
+    #     min_size: 1
+    #     max_size: 4
+    #     desired_capacity: 2
+    #     health_check_type: "ELB"
+    #     target_group_arn: ""
+    #     scaling_policies:
+    #       - type: "target_tracking"
+    #         target_value: 70
+    #         metric: "ASGAverageCPUUtilization"
+
+  ecs:
+    enabled: false
+    # cluster_name: ""
+    # capacity_provider: "FARGATE"                  # FARGATE | FARGATE_SPOT | EC2
+    # services: []
+    #   - name: "api-service"
+    #     cpu: 256
+    #     memory: 512
+    #     desired_count: 2
+    #     container:
+    #       image: ""
+    #       port: 8080
+    #     health_check_path: "/health"
+    #     autoscaling:
+    #       min_count: 1
+    #       max_count: 10
+    #       target_cpu: 70
+
+  eks:
+    enabled: false
+    # cluster_version: "1.29"
+    # endpoint_private_access: true
+    # endpoint_public_access: false
+    # node_groups: []
+    #   - name: "general"
+    #     instance_types: ["t3.medium"]
+    #     min_size: 2
+    #     max_size: 5
+    #     desired_size: 3
+    #     disk_size: 50
+    #     capacity_type: "ON_DEMAND"                # ON_DEMAND | SPOT
+    # addons:
+    #   - "vpc-cni"
+    #   - "coredns"
+    #   - "kube-proxy"
+    #   - "aws-ebs-csi-driver"
+
+  lambda:
+    enabled: false
+    # functions: []
+    #   - name: "data-processor"
+    #     runtime: "python3.12"
+    #     handler: "main.handler"
+    #     memory: 128
+    #     timeout: 30
+    #     architecture: "arm64"
+    #     environment_variables: {}
+    #     vpc_enabled: false
+    #     triggers: []                              # api-gateway | s3 | sqs | schedule
