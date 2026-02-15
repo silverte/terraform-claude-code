@@ -4,7 +4,7 @@ YAML 명세서(spec.yaml)를 읽어 Terraform 코드를 자동 생성합니다.
 
 ## Usage
 ```
-/project:tf-generate <spec-file>
+/tf-generate <spec-file>
 ```
 
 ## Arguments
@@ -202,8 +202,8 @@ terraform-style-guide 스킬 규칙 적용.
 
 ### 다음 단계
 1. terraform.tfvars 값 확인
-2. /project:tf-review environments/{env} 코드 검토
-3. /project:tf-plan {env} Plan 확인
+2. /tf-review environments/{env} 코드 검토
+3. /tf-plan {env} Plan 확인
 ```
 
 ---
@@ -465,8 +465,8 @@ cd environments/org-foundation/03-shared-networking && terraform fmt -recursive 
 
 ### 다음 단계
 1. 각 단계의 terraform.tfvars 값 확인
-2. /project:tf-review environments/org-foundation 코드 검토
-3. /project:tf-plan management 순서대로 Plan 확인
+2. /tf-review environments/org-foundation 코드 검토
+3. /tf-plan management 순서대로 Plan 확인
 ```
 
 ---

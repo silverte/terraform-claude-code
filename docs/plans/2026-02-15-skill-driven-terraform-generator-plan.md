@@ -693,7 +693,7 @@ git commit -m "feat: add monitoring template (CloudWatch, CloudTrail, Config, SN
 
 ## Usage
 \`\`\`
-/project:tf-spec <project-name>
+/tf-spec <project-name>
 \`\`\`
 
 ## Arguments
@@ -806,13 +806,13 @@ AskUserQuestion으로 필요한 인프라 카테고리를 복수 선택하게 �
 명세서가 확정되었습니다: specs/{project-name}-spec.yaml
 
 다음 단계:
-  /project:tf-generate specs/{project-name}-spec.yaml
+  /tf-generate specs/{project-name}-spec.yaml
 \`\`\`
 
 ## Expert Mode
 
 \`\`\`
-/project:tf-spec my-service --from templates/networking.yaml,templates/compute.yaml
+/tf-spec my-service --from templates/networking.yaml,templates/compute.yaml
 \`\`\`
 
 `--from` 옵션으로 카테고리를 미리 지정하면 Phase 2를 건너뛰고 바로 Phase 3로 진입합니다.
@@ -854,7 +854,7 @@ YAML 명세서(spec.yaml)를 읽어 Terraform 코드를 자동 생성합니다.
 
 ## Usage
 \`\`\`
-/project:tf-generate <spec-file>
+/tf-generate <spec-file>
 \`\`\`
 
 ## Arguments
@@ -1061,8 +1061,8 @@ terraform-style-guide 스킬의 규칙을 적용하여 최종 검증합니다.
 
 ### 다음 단계
 1. terraform.tfvars의 값을 확인하세요
-2. /project:tf-review environments/{env} 으로 코드를 검토하세요
-3. /project:tf-plan {env} 으로 Plan을 확인하세요
+2. /tf-review environments/{env} 으로 코드를 검토하세요
+3. /tf-plan {env} 으로 Plan을 확인하세요
 ```
 
 ## Code Generation Rules

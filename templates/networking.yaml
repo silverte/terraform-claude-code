@@ -1,5 +1,5 @@
 # =============================================================================
-# Networking Template - VPC, 서브넷, NAT, Transit Gateway, VPN
+# Networking Template - VPC, 서브넷, NAT, Transit Gateway, VPN, VPC Peering
 # =============================================================================
 
 networking:

@@ -36,18 +36,18 @@
 ### 사용 예시
 ```bash
 # === 조직 기반 설정 (먼저 실행) ===
-/project:tf-spec my-org
+/tf-spec my-org
 # → "조직 기반 설정" 선택 → Organizations, OU, SCP, 보안 서비스 구성
-/project:tf-generate specs/my-org-spec.yaml
-/project:tf-review environments/org-foundation
-/project:tf-plan management
+/tf-generate specs/my-org-spec.yaml
+/tf-review environments/org-foundation
+/tf-plan management
 
 # === 워크로드 배포 (org-foundation 이후) ===
-/project:tf-spec my-web-service
+/tf-spec my-web-service
 # → "워크로드 배포" 선택 → VPC, ECS, RDS 등 구성
-/project:tf-generate specs/my-web-service-spec.yaml
-/project:tf-review environments/dev
-/project:tf-plan dev
+/tf-generate specs/my-web-service-spec.yaml
+/tf-review environments/dev
+/tf-plan dev
 ```
 
 ## 프로젝트 구조
@@ -69,13 +69,13 @@
 │       └── tf-review.md             # 종합 리뷰
 ├── templates/                        # YAML 요구사항 템플릿
 │   ├── _base.yaml                   # 공통 (프로젝트, 환경, 태그)
-│   ├── organization.yaml            # Organizations, OU, SCP, 중앙 보안, TGW
-│   ├── networking.yaml              # VPC, 서브넷, NAT, TGW Attachment
-│   ├── compute.yaml                 # EC2, ECS, EKS, Lambda
-│   ├── database.yaml                # RDS, DynamoDB, ElastiCache
+│   ├── organization.yaml            # Organizations, OU, SCP, 중앙 보안, 공유 네트워크
+│   ├── networking.yaml              # VPC, 서브넷, NAT, TGW, VPN, VPC Peering
+│   ├── compute.yaml                 # EC2, ECS, EKS, Lambda, Auto Scaling
+│   ├── database.yaml                # RDS, Aurora, DynamoDB, ElastiCache
 │   ├── storage.yaml                 # S3, EFS, FSx
-│   ├── security.yaml                # IAM, SCP, WAF, GuardDuty
-│   └── monitoring.yaml              # CloudWatch, CloudTrail
+│   ├── security.yaml                # IAM, SCP, WAF, GuardDuty, Security Hub, KMS
+│   └── monitoring.yaml              # CloudWatch, CloudTrail, Config, SNS
 ├── specs/                            # 생성된 요구사항 명세서
 ├── modules/                          # Terraform 모듈
 │   ├── organization/                # 조직 레벨 모듈
@@ -257,10 +257,10 @@ s3://{bucket}/
 
 | 커맨드 | 용도 | 사용 시점 |
 |--------|------|-----------|
-| `/project:tf-spec` | 대화형 요구사항 수집 | 새 인프라 요청 시 |
-| `/project:tf-generate` | 명세서 → 코드 생성 | spec 확정 후 |
-| `/project:tf-review` | 종합 코드 리뷰 + 자동 수정 | 코드 생성 후 (Critical/High 이슈 자동 수정 제안) |
-| `/project:tf-plan` | Plan 실행 | 리뷰 통과 후 |
+| `/tf-spec` | 대화형 요구사항 수집 | 새 인프라 요청 시 |
+| `/tf-generate` | 명세서 → 코드 생성 | spec 확정 후 |
+| `/tf-review` | 종합 코드 리뷰 + 자동 수정 | 코드 생성 후 (Critical/High 이슈 자동 수정 제안) |
+| `/tf-plan` | Plan 실행 | 리뷰 통과 후 |
 
 ## Subagent 활용 가이드
 

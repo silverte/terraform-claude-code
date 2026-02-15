@@ -8,7 +8,7 @@
 
 ## Usage
 ```
-/project:tf-plan <account> [environment]
+/tf-plan <account> [environment]
 ```
 
 ## Arguments
@@ -17,9 +17,9 @@
 
 ## Examples
 ```
-/project:tf-plan dev
-/project:tf-plan prod
-/project:tf-plan management
+/tf-plan dev
+/tf-plan prod
+/tf-plan management
 ```
 
 ## Execution Steps

@@ -239,12 +239,12 @@ project:
 4. **사용 예시** 추가:
    ```bash
    # 조직 기반 설정
-   /project:tf-spec my-org
-   /project:tf-generate specs/my-org-spec.yaml
+   /tf-spec my-org
+   /tf-generate specs/my-org-spec.yaml
 
    # 워크로드 배포
-   /project:tf-spec my-web-service
-   /project:tf-generate specs/my-web-service-spec.yaml
+   /tf-spec my-web-service
+   /tf-generate specs/my-web-service-spec.yaml
    ```
 
 ---

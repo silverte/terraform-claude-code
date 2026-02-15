@@ -8,7 +8,7 @@
 
 ## Usage
 ```
-/project:tf-review <path>
+/tf-review <path>
 ```
 
 ## Arguments
@@ -16,9 +16,9 @@
 
 ## Examples
 ```
-/project:tf-review modules/vpc
-/project:tf-review environments/prod
-/project:tf-review .
+/tf-review modules/vpc
+/tf-review environments/prod
+/tf-review .
 ```
 
 ## MCP 서버 활용
@@ -372,8 +372,8 @@ AskUserQuestion으로 수정 범위를 확인합니다.
 남은 이슈: Medium 2건, Low 1건 (리포트 참조)
 
 다음 단계:
-1. 수정된 코드 확인: /project:tf-review <path> (재검증)
-2. Plan 확인: /project:tf-plan <env>
+1. 수정된 코드 확인: /tf-review <path> (재검증)
+2. Plan 확인: /tf-plan <env>
 ```
 
 ### 자동 수정 불가능한 경우
@@ -393,12 +393,12 @@ AskUserQuestion으로 수정 범위를 확인합니다.
 
 ### Critical/High 이슈가 있는 경우
 1. Phase 6(자동 수정)을 통해 코드 수정
-2. 수정 후 `/project:tf-review`를 재실행하여 이슈 해결 확인
-3. 모든 Critical/High 해결 후 `/project:tf-plan` 진행
+2. 수정 후 `/tf-review`를 재실행하여 이슈 해결 확인
+3. 모든 Critical/High 해결 후 `/tf-plan` 진행
 
 ### Medium/Low 이슈만 있는 경우
 1. 리포트의 수정 가이드를 참고하여 필요 시 수동 수정
-2. `/project:tf-plan` 바로 진행 가능
+2. `/tf-plan` 바로 진행 가능
 
 ### 이슈가 없는 경우
-1. `/project:tf-plan` 바로 진행
+1. `/tf-plan` 바로 진행

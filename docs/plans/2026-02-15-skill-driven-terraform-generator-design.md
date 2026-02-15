@@ -40,17 +40,17 @@ terraform-multi-account-claude-code/
 │       └── tf-review.md             # 종합 코드 리뷰
 ├── templates/                        # [NEW] YAML 요구사항 템플릿
 │   ├── _base.yaml                   # 공통 필드 (프로젝트, 환경, 태그)
-│   ├── networking.yaml              # VPC, 서브넷, TGW, VPN
-│   ├── compute.yaml                 # EC2, ECS, EKS, Lambda, ASG
-│   ├── database.yaml                # RDS, DynamoDB, ElastiCache
+│   ├── networking.yaml              # VPC, 서브넷, NAT, TGW, VPN, VPC Peering
+│   ├── compute.yaml                 # EC2, ECS, EKS, Lambda, Auto Scaling
+│   ├── database.yaml                # RDS, Aurora, DynamoDB, ElastiCache
 │   ├── storage.yaml                 # S3, EFS, FSx
-│   ├── security.yaml                # IAM, SCP, WAF, GuardDuty
-│   └── monitoring.yaml              # CloudWatch, CloudTrail, Config
+│   ├── security.yaml                # IAM, SCP, WAF, GuardDuty, Security Hub, KMS
+│   ├── monitoring.yaml              # CloudWatch, CloudTrail, Config, SNS
+│   └── organization.yaml            # Organizations, OU, SCP, 중앙 보안, TGW
 ├── specs/                            # [NEW] 생성된 요구사항 명세서
 │   └── (사용자별 spec.yaml 저장)
 ├── modules/                          # 재사용 가능한 Terraform 모듈
-├── environments/                     # 환경별 배포 설정
-└── organization/                     # AWS Organizations 설정
+└── environments/                     # 환경별 배포 설정
 ```
 
 ## Component Design

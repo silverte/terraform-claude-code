@@ -4,7 +4,7 @@
 
 ## Usage
 ```
-/project:tf-spec <project-name>
+/tf-spec <project-name>
 ```
 
 ## Arguments
@@ -81,11 +81,11 @@ AskUserQuestion으로 필요한 인프라 카테고리를 복수 선택하게 �
 
 카테고리 목록:
 ```
-1. 네트워크 (VPC, 서브넷, NAT Gateway, Transit Gateway)
-2. 컴퓨팅 (EC2, ECS, EKS, Lambda)
+1. 네트워크 (VPC, 서브넷, NAT Gateway, Transit Gateway, VPN, VPC Peering)
+2. 컴퓨팅 (EC2, ECS, EKS, Lambda, Auto Scaling)
 3. 데이터베이스 (RDS, Aurora, DynamoDB, ElastiCache)
-4. 스토리지 (S3, EFS)
-5. 보안 (IAM, SCP, WAF, GuardDuty, Security Hub)
+4. 스토리지 (S3, EFS, FSx)
+5. 보안 (IAM, SCP, WAF, GuardDuty, Security Hub, KMS)
 6. 모니터링 (CloudWatch, CloudTrail, Config, SNS)
 ```
 
@@ -608,7 +608,7 @@ ssm_exports:
 명세서가 확정되었습니다: specs/{project-name}-spec.yaml
 
 다음 단계:
-  /project:tf-generate specs/{project-name}-spec.yaml
+  /tf-generate specs/{project-name}-spec.yaml
 ```
 
 ---
@@ -616,7 +616,7 @@ ssm_exports:
 ## Expert Mode
 
 ```
-/project:tf-spec my-service --from templates/networking.yaml,templates/compute.yaml
+/tf-spec my-service --from templates/networking.yaml,templates/compute.yaml
 ```
 
 `--from` 옵션으로 카테고리를 미리 지정하면 Phase 2를 건너뛰고 바로 Phase 3로 진입합니다.
@@ -625,7 +625,7 @@ Phase 1의 기본 정보 수집은 여전히 수행됩니다.
 
 org-foundation 전용 단축:
 ```
-/project:tf-spec my-org --type org-foundation
+/tf-spec my-org --type org-foundation
 ```
 `--type org-foundation` 옵션으로 Phase 0을 건너뛰고 바로 Phase 1-org로 진입합니다.
 

@@ -38,33 +38,33 @@ claude
 
 ```bash
 # Step 1: 대화형으로 요구사항 수집
-/project:tf-spec my-web-service
+/tf-spec my-web-service
 
 # Step 2: Terraform 코드 생성
-/project:tf-generate specs/my-web-service-spec.yaml
+/tf-generate specs/my-web-service-spec.yaml
 
 # Step 3: 코드 리뷰
-/project:tf-review environments/dev
+/tf-review environments/dev
 
 # Step 4: Plan 확인
-/project:tf-plan dev
+/tf-plan dev
 ```
 
 ### 3. 조직 기반 설정 (Organizations, SCP, 보안)
 
 ```bash
 # Step 1: 대화형으로 조직 설정 수집
-/project:tf-spec my-org
+/tf-spec my-org
 # → "조직 기반 설정" 선택
 
 # Step 2: 3단계 Terraform 코드 생성
-/project:tf-generate specs/my-org-spec.yaml
+/tf-generate specs/my-org-spec.yaml
 
 # Step 3: 코드 리뷰
-/project:tf-review environments/org-foundation
+/tf-review environments/org-foundation
 
 # Step 4: 순서대로 Plan 확인
-/project:tf-plan management
+/tf-plan management
 ```
 
 ## 워크플로우
@@ -81,7 +81,7 @@ claude
 
 ## 커맨드 상세
 
-### `/project:tf-spec <name>`
+### `/tf-spec <name>`
 
 대화를 통해 인프라 요구사항을 수집합니다.
 
@@ -93,12 +93,12 @@ claude
 
 | 카테고리 | 포함 리소스 |
 |----------|------------|
-| 네트워크 | VPC, 서브넷, NAT Gateway, Transit Gateway |
-| 컴퓨팅 | EC2, ECS(Fargate), EKS, Lambda |
+| 네트워크 | VPC, 서브넷, NAT Gateway, Transit Gateway, VPN, VPC Peering |
+| 컴퓨팅 | EC2, ECS(Fargate), EKS, Lambda, Auto Scaling |
 | 데이터베이스 | RDS, Aurora, DynamoDB, ElastiCache |
-| 스토리지 | S3, EFS |
-| 보안 | IAM, WAF, GuardDuty, Security Hub, KMS |
-| 모니터링 | CloudWatch, CloudTrail, Config |
+| 스토리지 | S3, EFS, FSx |
+| 보안 | IAM, SCP, WAF, GuardDuty, Security Hub, KMS |
+| 모니터링 | CloudWatch, CloudTrail, Config, SNS |
 
 **조직 기반 수집 항목:**
 
@@ -112,7 +112,7 @@ claude
 
 비전문가도 사용할 수 있도록 기술 용어 대신 목적 기반 질문을 제공합니다.
 
-### `/project:tf-generate <spec-file>`
+### `/tf-generate <spec-file>`
 
 명세서를 읽고 Terraform 코드를 자동 생성합니다.
 
@@ -137,7 +137,7 @@ environments/org-foundation/
 └── 03-shared-networking/     # Transit Gateway, Egress VPC
 ```
 
-### `/project:tf-review <path>`
+### `/tf-review <path>`
 
 4개 전문 에이전트가 코드를 종합 검토하고, 심각한 이슈는 자동으로 수정을 제안합니다.
 
@@ -155,7 +155,7 @@ environments/org-foundation/
 4. 승인된 수정만 코드에 적용
 5. 수정 후 자동 재검증 (fmt, validate)
 
-### `/project:tf-plan <env>`
+### `/tf-plan <env>`
 
 Terraform Plan을 실행하고 변경사항을 분석합니다.
 
@@ -179,12 +179,12 @@ Terraform Plan을 실행하고 변경사항을 분석합니다.
 ├── .mcp.json                        # AWS MCP 서버 설정
 ├── templates/                       # YAML 요구사항 템플릿
 │   ├── _base.yaml                   # 공통 필드
-│   ├── networking.yaml              # VPC, 서브넷, NAT, TGW
-│   ├── compute.yaml                 # EC2, ECS, EKS, Lambda
-│   ├── database.yaml                # RDS, DynamoDB, ElastiCache
-│   ├── storage.yaml                 # S3, EFS
-│   ├── security.yaml                # IAM, WAF, GuardDuty
-│   ├── monitoring.yaml              # CloudWatch, CloudTrail
+│   ├── networking.yaml              # VPC, 서브넷, NAT, TGW, VPN, VPC Peering
+│   ├── compute.yaml                 # EC2, ECS, EKS, Lambda, Auto Scaling
+│   ├── database.yaml                # RDS, Aurora, DynamoDB, ElastiCache
+│   ├── storage.yaml                 # S3, EFS, FSx
+│   ├── security.yaml                # IAM, SCP, WAF, GuardDuty, Security Hub, KMS
+│   ├── monitoring.yaml              # CloudWatch, CloudTrail, Config, SNS
 │   └── organization.yaml            # Organizations, OU, SCP, 보안
 ├── specs/                           # 생성된 명세서 (.yaml)
 ├── modules/                         # 생성된 Terraform 모듈
@@ -233,39 +233,39 @@ Organization Root
 
 ```bash
 # 1. 조직 설정
-/project:tf-spec my-org
+/tf-spec my-org
 # → Organizations, OU, SCP, 보안 서비스, Account Baseline 구성
 
-/project:tf-generate specs/my-org-spec.yaml
+/tf-generate specs/my-org-spec.yaml
 # → 01-organization, 02-security-baseline, 03-shared-networking 생성
 
 # 2. 워크로드 배포
-/project:tf-spec payment-api
+/tf-spec payment-api
 # → VPC, ECS Fargate, Aurora PostgreSQL, WAF 구성
 
-/project:tf-generate specs/payment-api-spec.yaml
+/tf-generate specs/payment-api-spec.yaml
 # → environments/dev/ 코드 생성
 ```
 
 ### 시나리오 2: 기존 계정에 워크로드만 배포
 
 ```bash
-/project:tf-spec my-app
+/tf-spec my-app
 # → "워크로드 배포" 선택, 필요한 카테고리만 구성
 
-/project:tf-generate specs/my-app-spec.yaml
-/project:tf-review environments/dev
-/project:tf-plan dev
+/tf-generate specs/my-app-spec.yaml
+/tf-review environments/dev
+/tf-plan dev
 ```
 
 ### 시나리오 3: 전문가 모드 (카테고리 미리 지정)
 
 ```bash
 # 네트워크 + 컴퓨팅만 빠르게 구성
-/project:tf-spec my-service --from templates/networking.yaml,templates/compute.yaml
+/tf-spec my-service --from templates/networking.yaml,templates/compute.yaml
 
 # 조직 설정 바로 시작
-/project:tf-spec my-org --type org-foundation
+/tf-spec my-org --type org-foundation
 ```
 
 ## 보안 원칙
