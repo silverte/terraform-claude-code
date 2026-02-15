@@ -1,0 +1,63 @@
+# =============================================================================
+# Monitoring Template - CloudWatch, CloudTrail, Config, SNS
+# =============================================================================
+
+monitoring:
+
+  cloudwatch:
+    enabled: true
+
+    alarms: []
+    # alarms:
+    #   - name: "high-cpu"
+    #     metric: "CPUUtilization"
+    #     namespace: "AWS/EC2"
+    #     statistic: "Average"
+    #     period: 300
+    #     threshold: 80
+    #     comparison: "GreaterThanThreshold"
+    #     evaluation_periods: 2
+    #     alarm_actions: []
+
+    log_groups: []
+    # log_groups:
+    #   - name: "/app/api"
+    #     retention_days: 30
+    #     kms_encryption: false
+
+    dashboards: []
+    # dashboards:
+    #   - name: "app-dashboard"
+    #     widgets:
+    #       - type: "metric"
+    #         title: "CPU Utilization"
+    #         metrics: ["AWS/EC2", "CPUUtilization"]
+
+  cloudtrail:
+    enabled: true
+    is_multi_region: true
+    enable_log_file_validation: true
+    s3_bucket_name: ""
+    kms_key_id: ""
+    include_global_service_events: true
+
+  config:
+    enabled: true
+    s3_bucket_name: ""
+    recording_frequency: "CONTINUOUS"
+    # rules: []
+    #   - "s3-bucket-public-read-prohibited"
+    #   - "encrypted-volumes"
+    #   - "iam-password-policy"
+    #   - "root-account-mfa-enabled"
+
+  sns:
+    enabled: false
+    # topics: []
+    #   - name: "infra-alerts"
+    #     display_name: "Infrastructure Alerts"
+    #     subscriptions:
+    #       - protocol: "email"
+    #         endpoint: "ops@example.com"
+    #       - protocol: "lambda"
+    #         endpoint: ""
