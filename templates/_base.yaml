@@ -1,0 +1,33 @@
+# =============================================================================
+# Base Template - 모든 인프라 명세서의 공통 필드
+# =============================================================================
+# 이 템플릿은 프로젝트 기본 정보, 소유자, 태그, State 설정을 정의합니다.
+# /tf-spec 커맨드가 대화를 통해 이 필드들을 먼저 수집합니다.
+
+project:
+  name: ""                          # 프로젝트명 (예: my-web-service)
+  description: ""                   # 프로젝트 설명
+  environment: "dev"                # 배포 환경: dev | staging | prod
+  region: "ap-northeast-2"          # AWS 리전
+  account_id: ""                    # 대상 AWS 계정 ID
+
+  # 멀티 어카운트 설정 (선택)
+  multi_account:
+    enabled: false
+    management_account_id: ""       # Management Account ID
+    security_account_id: ""         # Security Account ID
+    assume_role_name: "TerraformExecutionRole"
+
+owner:
+  team: ""                          # 담당 팀
+  cost_center: ""                   # 비용 센터 코드
+  contact_email: ""                 # 담당자 이메일
+
+tags:                                # 추가 커스텀 태그
+  # example_key: example_value
+
+state:
+  backend: "s3"                     # 백엔드 타입: s3 | local
+  bucket: ""                        # S3 State 버킷명
+  lock_table: ""                    # DynamoDB 락 테이블명
+  encrypt: true                     # State 암호화 여부
