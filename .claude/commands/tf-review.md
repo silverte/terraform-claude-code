@@ -2,6 +2,10 @@
 
 보안, 비용, 모범 사례에 대한 종합적인 Terraform 코드 리뷰를 수행합니다.
 
+## Workflow Position
+이 커맨드는 `/tf-spec` → `/tf-generate` → **`/tf-review`** → `/tf-plan` 워크플로우에서 코드 품질 검증 단계입니다.
+`/tf-generate`로 코드가 생성된 후, `/tf-plan` 전에 실행하세요.
+
 ## Usage
 ```
 /project:tf-review <path>

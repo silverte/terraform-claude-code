@@ -2,6 +2,10 @@
 
 지정된 계정과 환경에 대해 terraform plan을 실행합니다.
 
+## Workflow Position
+이 커맨드는 `/tf-spec` → `/tf-generate` → `/tf-review` → **`/tf-plan`** 워크플로우의 마지막 검증 단계입니다.
+`/tf-generate`로 코드가 생성된 후 실행하세요.
+
 ## Usage
 ```
 /project:tf-plan <account> [environment]
