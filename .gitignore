@@ -51,6 +51,11 @@ secrets/
 .env.*
 !.env.example
 
+# Spec files (may contain account IDs and sensitive config)
+specs/*-spec.yaml
+!specs/.gitkeep
+!specs/*-spec.yaml.example
+
 # Infracost
 .infracost/
 
