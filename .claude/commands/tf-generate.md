@@ -471,6 +471,33 @@ cd environments/org-foundation/03-shared-networking && terraform fmt -recursive 
 
 ---
 
+## MCP 서버 활용
+
+코드 생성 과정에서 MCP 서버를 활용하여 정확한 Terraform 코드를 생성합니다.
+
+### Terraform MCP (`awslabs.terraform-mcp-server`)
+- **리소스 속성 조회**: 모듈 생성 시 Terraform AWS Provider의 최신 리소스/데이터 소스 속성을 조회하여 정확한 코드 생성
+- **필수/선택 속성 확인**: 리소스별 required/optional 속성을 확인하여 누락 방지
+- **활용 시점**:
+  - Phase 3/3-org(모듈 확인 및 생성): tf-module-developer 에이전트가 새 모듈을 만들 때 리소스 속성 참조
+  - Phase 4/4-org(환경 파일 생성): Provider 설정, 리소스 블록의 정확한 속성 확인
+  ```
+  예: VPC 모듈 생성 시 → aws_vpc, aws_subnet 등의 최신 속성 조회
+  예: Organizations 모듈 생성 시 → aws_organizations_organization, aws_organizations_policy 속성 확인
+  예: GuardDuty org 모듈 시 → aws_guardduty_organization_configuration 속성 확인
+  ```
+
+### AWS Documentation MCP (`awslabs.aws-documentation-mcp-server`)
+- **서비스 연동 패턴 확인**: 크로스 계정 접근, 위임 관리자 설정, RAM 공유 등 복잡한 패턴의 올바른 구성 확인
+- **API 제한/할당량 참조**: 리소스 생성 시 알아야 할 제한 사항 (SCP 최대 크기, OU 중첩 깊이 등)
+- **활용 시점**:
+  - Phase 3-org(모듈 생성): org-foundation 모듈의 AWS API 호출 패턴 확인
+  - Phase 4-org(환경 파일 생성): 단계 간 의존성의 올바른 구현 방법 확인
+  ```
+  예: Delegated Administrator 설정 시 → 지원 서비스 목록 및 설정 순서 확인
+  예: Organization CloudTrail 시 → S3 버킷 정책, KMS 키 정책 요구사항 확인
+  ```
+
 ## Code Generation Rules
 
 1. **CLAUDE.md 코딩 표준 준수**: 파일 구조, 네이밍 규칙, 필수 태그

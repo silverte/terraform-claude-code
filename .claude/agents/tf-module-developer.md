@@ -368,6 +368,28 @@ terraform test
 terraform-docs markdown table . > README.md
 ```
 
+## MCP 서버 활용
+
+모듈 개발 시 MCP 서버를 활용하여 정확한 Terraform 리소스 코드를 작성합니다.
+
+### Terraform MCP (`awslabs.terraform-mcp-server`) - 필수 활용
+- **리소스 속성 조회**: 모듈에서 사용할 리소스의 정확한 속성(required/optional/computed)을 조회하여 코드 작성
+- **Data Source 확인**: 모듈에서 참조할 데이터 소스의 올바른 속성 확인
+- **모듈 작성 시 반드시 호출**: 새 리소스를 포함하는 모듈 작성 전에 해당 리소스의 Provider 문서를 조회
+  ```
+  예: VPC 모듈 작성 시 → aws_vpc, aws_subnet, aws_nat_gateway, aws_route_table 속성 조회
+  예: Organization 모듈 작성 시 → aws_organizations_organization, aws_organizations_organizational_unit 속성 조회
+  예: GuardDuty 모듈 작성 시 → aws_guardduty_detector, aws_guardduty_organization_configuration 속성 조회
+  ```
+
+### AWS Documentation MCP (`awslabs.aws-documentation-mcp-server`)
+- **서비스 연동 패턴 확인**: 복잡한 서비스 연동(크로스 계정, 위임 관리 등)의 올바른 패턴 참조
+- **API 동작 이해**: Terraform 리소스 뒤에 있는 AWS API의 동작과 제약 사항 이해
+  ```
+  예: Organization CloudTrail 모듈 시 → S3 버킷 정책, KMS 키 정책의 정확한 구성 확인
+  예: RAM 공유 모듈 시 → RAM 공유 가능 리소스 유형 및 조건 확인
+  ```
+
 ## Anti-Patterns to Avoid
 
 | Anti-Pattern | Problem | Solution |

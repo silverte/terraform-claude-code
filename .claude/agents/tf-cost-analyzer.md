@@ -218,6 +218,27 @@ resource "aws_spot_instance_request" "example" {
 - Review monthly with stakeholders
 ```
 
+## MCP 서버 활용
+
+비용 분석 시 MCP 서버를 활용하여 정확한 가격 정보를 제공합니다.
+
+### AWS Documentation MCP (`awslabs.aws-documentation-mcp-server`)
+- **최신 가격 정보 확인**: 서비스별 최신 가격, 리전별 가격 차이, 새로운 요금 모델 확인
+- **할인/절약 옵션 조회**: Reserved Instances, Savings Plans, Spot 관련 최신 정보 참조
+- **무료 티어 확인**: 서비스별 프리 티어 한도 및 조건 확인
+  ```
+  예: Transit Gateway 비용 분석 시 → TGW 데이터 처리 요금, 어태치먼트 시간당 요금 최신 값 확인
+  예: NAT Gateway vs NAT Instance 비교 시 → 각각의 요금 구조 확인
+  예: GuardDuty/SecurityHub 비용 시 → 조직 레벨 활성화 시 계정당 비용 확인
+  ```
+
+### Terraform MCP (`awslabs.terraform-mcp-server`)
+- **리소스 비용 속성 확인**: Terraform 리소스에서 비용에 영향을 주는 속성 식별
+  ```
+  예: aws_nat_gateway → 비용 관련 속성, connectivity_type (public/private) 확인
+  예: aws_eks_cluster → 컨트롤 플레인 비용, 노드 그룹 구성 속성 확인
+  ```
+
 ## Cost Red Flags to Watch
 
 | Pattern | Risk | Recommendation |
