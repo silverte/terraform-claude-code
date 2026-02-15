@@ -139,7 +139,7 @@ environments/org-foundation/
 
 ### `/project:tf-review <path>`
 
-4개 전문 에이전트가 코드를 종합 검토합니다.
+4개 전문 에이전트가 코드를 종합 검토하고, 심각한 이슈는 자동으로 수정을 제안합니다.
 
 | 검토 항목 | 에이전트 | 내용 |
 |-----------|---------|------|
@@ -147,6 +147,13 @@ environments/org-foundation/
 | 비용 | tf-cost-analyzer | 리소스 비용, 최적화 기회, 절약 방안 |
 | 코드 품질 | 자동화 도구 | terraform fmt, validate, tfsec, checkov |
 | 베스트 프랙티스 | 수동 검토 | 모듈 구조, 변수, 태그, 문서화 |
+
+**자동 수정 흐름:**
+1. 리뷰 리포트 출력 (점수 + 이슈 목록)
+2. Critical/High 이슈 발견 시 → 수정 코드 자동 생성
+3. 각 수정 사항의 diff를 보여주고 승인 여부 확인
+4. 승인된 수정만 코드에 적용
+5. 수정 후 자동 재검증 (fmt, validate)
 
 ### `/project:tf-plan <env>`
 

@@ -259,7 +259,7 @@ s3://{bucket}/
 |--------|------|-----------|
 | `/project:tf-spec` | 대화형 요구사항 수집 | 새 인프라 요청 시 |
 | `/project:tf-generate` | 명세서 → 코드 생성 | spec 확정 후 |
-| `/project:tf-review` | 종합 코드 리뷰 | 코드 생성 후 |
+| `/project:tf-review` | 종합 코드 리뷰 + 자동 수정 | 코드 생성 후 (Critical/High 이슈 자동 수정 제안) |
 | `/project:tf-plan` | Plan 실행 | 리뷰 통과 후 |
 
 ## Subagent 활용 가이드
