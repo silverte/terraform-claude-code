@@ -1,0 +1,74 @@
+# =============================================================================
+# Database Template - RDS, Aurora, DynamoDB, ElastiCache
+# =============================================================================
+
+database:
+
+  rds:
+    enabled: false
+    # instances: []
+    #   - name: "main-db"
+    #     engine: "postgres"                        # postgres | mysql | mariadb
+    #     engine_version: "16.1"
+    #     instance_class: "db.t3.medium"
+    #     allocated_storage: 20
+    #     max_allocated_storage: 100
+    #     storage_type: "gp3"
+    #     storage_encrypted: true
+    #     multi_az: false
+    #     backup_retention_period: 7
+    #     deletion_protection: false
+    #     skip_final_snapshot: true
+    #     performance_insights: true
+    #     monitoring_interval: 60
+    #     publicly_accessible: false
+    #     parameter_group_family: "postgres16"
+    #     parameters: {}
+
+  aurora:
+    enabled: false
+    # clusters: []
+    #   - name: "main-cluster"
+    #     engine: "aurora-postgresql"
+    #     engine_version: "16.1"
+    #     serverless_v2:
+    #       enabled: false
+    #       min_capacity: 0.5
+    #       max_capacity: 16
+    #     instances:
+    #       count: 2
+    #       instance_class: "db.r6g.large"
+    #     storage_encrypted: true
+    #     backup_retention_period: 7
+    #     deletion_protection: false
+
+  dynamodb:
+    enabled: false
+    # tables: []
+    #   - name: "sessions"
+    #     billing_mode: "PAY_PER_REQUEST"
+    #     hash_key: "id"
+    #     hash_key_type: "S"
+    #     range_key: ""
+    #     range_key_type: ""
+    #     ttl_attribute: "expires_at"
+    #     point_in_time_recovery: true
+    #     encryption: "AWS_OWNED"
+    #     global_secondary_indexes: []
+    #     stream_enabled: false
+
+  elasticache:
+    enabled: false
+    # clusters: []
+    #   - name: "app-cache"
+    #     engine: "redis"
+    #     engine_version: "7.0"
+    #     node_type: "cache.t3.micro"
+    #     num_cache_nodes: 1
+    #     replication_group:
+    #       enabled: false
+    #       num_replicas: 1
+    #       automatic_failover: true
+    #     at_rest_encryption: true
+    #     transit_encryption: true
+    #     snapshot_retention_limit: 5
