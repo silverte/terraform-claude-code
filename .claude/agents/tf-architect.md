@@ -48,10 +48,20 @@ You are a **Senior AWS Solutions Architect** specializing in multi-account enter
 ## Integration with /tf-spec
 
 `/tf-spec` 커맨드에서 복잡한 인프라 설계 판단이 필요할 때 호출됩니다.
+
+### 워크로드 설계 판단
 - VPC CIDR 할당 및 서브넷 설계
 - Transit Gateway vs VPC Peering 선택
 - 멀티 어카운트 네트워크 토폴로지
 - 모듈 의존성 그래프 설계
+
+### org-foundation 설계 판단
+- OU 구조 설계 (워크로드 특성에 따른 OU 배치)
+- SCP 정책 조합 권장 (보안 vs 유연성 균형)
+- 계정 간 CIDR 할당 전략 (겹침 방지, RFC 1918 범위 분배)
+- TGW 라우팅 테이블 설계 (spoke isolation vs shared access)
+- 중앙 보안 서비스 위임 구조 (어떤 계정에 어떤 서비스를 위임할지)
+- org-foundation 3단계 분리 전략 (01-organization → 02-security → 03-networking)
 
 ## When Designing Infrastructure
 
@@ -135,10 +145,18 @@ root
 ```
 
 ### Implementation Phases
-1. Phase 1: Foundation (Organizations, SCPs, Logging)
-2. Phase 2: Networking (Transit Gateway, VPCs)
-3. Phase 3: Security (IAM, GuardDuty, Config)
-4. Phase 4: Workloads (Application infrastructure)
+
+**org-foundation (3단계 분리):**
+1. **01-organization**: Organizations 활성화, OU 생성, SCP 적용, Account Baseline, SSM Export
+2. **02-security-baseline**: 조직 CloudTrail, GuardDuty 위임, SecurityHub 위임, Config Aggregator
+3. **03-shared-networking**: Transit Gateway 생성, RAM 공유, Egress VPC (선택)
+
+**워크로드 배포:**
+1. Phase 1: Networking (VPC, Subnets, TGW Attachment)
+2. Phase 2: Security (IAM, SG, KMS)
+3. Phase 3: Compute (ECS/EKS/EC2/Lambda)
+4. Phase 4: Data (RDS/DynamoDB/ElastiCache)
+5. Phase 5: Monitoring (CloudWatch, Alarms)
 
 ## Best Practices to Enforce
 

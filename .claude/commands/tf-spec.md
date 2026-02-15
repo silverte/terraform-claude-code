@@ -8,9 +8,26 @@
 ```
 
 ## Arguments
-- **project-name**: 프로젝트 식별자 (예: my-web-service, payment-api)
+- **project-name**: 프로젝트 식별자 (예: my-web-service, my-org)
 
 ## Execution Steps
+
+### Phase 0: 프로젝트 타입 선택
+
+AskUserQuestion 도구로 프로젝트 타입을 질문합니다.
+
+질문: "어떤 유형의 인프라를 구성하시겠습니까?"
+
+선택지:
+- **조직 기반 설정 (Organization Foundation)**: AWS Organizations, OU, SCP, 중앙 보안/로깅, Transit Gateway 등 멀티 어카운트 거버넌스 구성
+- **워크로드 배포**: VPC, EC2, ECS, RDS 등 애플리케이션 인프라 배포
+
+- "조직 기반 설정" 선택 → `project.type: "org-foundation"` 설정 → **Phase 1-org**로 진행
+- "워크로드 배포" 선택 → `project.type: "workload"` 설정 → **Phase 1**로 진행
+
+---
+
+## 워크로드 배포 흐름 (project.type: "workload")
 
 ### Phase 1: 기본 정보 수집
 
@@ -298,19 +315,189 @@ AskUserQuestion으로 필요한 인프라 카테고리를 복수 선택하게 �
    - 질문: "CloudWatch 대시보드를 생성하시겠습니까? (y/n, 기본: n)"
    - y 선택 시: 선택된 리소스 기반으로 기본 대시보드 자동 구성
 
-### Phase 4: 명세서 생성
+### Phase 4: 명세서 생성 (워크로드)
 
-수집된 정보를 `specs/{project-name}-spec.yaml`로 저장합니다.
+→ "명세서 생성 공통" 섹션의 워크로드 파일 구조 참조
 
-#### 파일 생성 규칙
+### Phase 5: 확인 및 수정 (워크로드)
+
+→ "확인 및 수정 공통" 섹션 참조
+
+---
+
+## 조직 기반 설정 흐름 (project.type: "org-foundation")
+
+### Phase 1-org: 기본 정보 수집
+
+`templates/_base.yaml` + `templates/organization.yaml`을 참조합니다.
+AskUserQuestion 도구를 사용하여 하나씩 질문합니다.
+
+1. **프로젝트 설명**
+   - 질문: "조직 구성에 대해 간략히 설명해주세요 (예: ABC Corp 멀티 어카운트 기반 구성)"
+   - 기본값: "{project-name} organization foundation"
+
+2. **리전**
+   - 질문: "기본 AWS 리전을 선택해주세요 (기본: ap-northeast-2)"
+   - 안내: "AWS Organizations, IAM 등 글로벌 서비스는 us-east-1이 자동 포함됩니다"
+
+3. **Management Account ID**
+   - 질문: "Management Account ID를 입력해주세요 (12자리 숫자, AWS Organizations를 관리하는 계정)"
+   - 검증: 12자리 숫자
+
+4. **Security Account ID**
+   - 질문: "Security Account ID를 입력해주세요 (12자리 숫자, GuardDuty/SecurityHub 위임 관리 계정)"
+   - 검증: 12자리 숫자
+
+5. **Log Archive Account ID**
+   - 질문: "Log Archive Account ID를 입력해주세요 (12자리 숫자, CloudTrail/Config 로그 저장 계정)"
+   - 검증: 12자리 숫자
+   - 안내: "Security Account와 동일해도 됩니다"
+
+6. **추가 계정 정보**
+   - 질문: "추가 계정 ID를 등록하시겠습니까? (Shared Services, Dev, Staging, Prod 등)"
+   - y 선택 시: 각 계정의 이름과 ID를 하나씩 입력
+   - 안내: "나중에 계정을 추가할 수도 있습니다"
+
+7. **담당 팀 / 이메일 / 비용 센터** (워크로드와 동일)
+
+8. **State 설정**
+   - 기본값: `{project-name}-terraform-state-{management-account-id}`
+
+### Phase 2-org: 조직 구조 (OU)
+
+`templates/organization.yaml`의 `organizational_units` 섹션을 참조합니다.
+
+1. **OU 구조 선택**
+   - 질문: "OU(Organizational Unit) 구조를 선택해주세요:"
+     - `1` **권장 구조** (Core / Infrastructure / Workloads(Dev,Staging,Prod) / Sandbox)
+     - `2` **간소화 구조** (Core / Workloads(Dev,Prod))
+     - `3` **커스텀** (직접 설계)
+   - 비전문가: "OU는 계정을 그룹으로 묶어 보안 정책을 적용하는 단위입니다. 권장 구조를 사용하시겠습니까?"
+   - 기본값: 권장 구조
+
+2. **커스텀 선택 시:**
+   - 최상위 OU 이름들 입력
+   - 각 OU의 하위 OU 필요 여부
+   - 복잡한 설계 시 tf-architect 서브에이전트 호출
+
+### Phase 3-org: SCP (Service Control Policies)
+
+`templates/organization.yaml`의 `scps` 섹션을 참조합니다.
+
+1. **SCP 적용 여부**
+   - 질문: "SCP(서비스 제어 정책)를 적용하시겠습니까? 계정에서 수행 가능한 작업을 제한합니다. (y/n, 기본: y)"
+   - 비전문가: "SCP는 계정에서 할 수 있는 작업의 최대 범위를 제한하는 보안 정책입니다. 예: 루트 사용자 차단, 허용 리전 제한"
+
+2. **SCP 세트 선택**
+   - 질문: "적용할 SCP를 선택해주세요 (복수 선택 가능):"
+     - `1` 루트 계정 사용 차단 (강력 권장)
+     - `2` 허용 리전 제한 (강력 권장)
+     - `3` 퍼블릭 S3 버킷 생성 차단 (권장)
+     - `4` 조직 탈퇴 차단 (권장)
+     - `5` 전체 선택 (기본)
+   - 기본값: 전체 선택
+
+3. **허용 리전 선택** ("허용 리전 제한" 선택 시)
+   - 질문: "허용할 AWS 리전을 선택해주세요 (기본: ap-northeast-2, us-east-1)"
+   - 안내: "us-east-1은 IAM, CloudFront 등 글로벌 서비스에 필요하므로 포함을 권장합니다"
+
+### Phase 4-org: 중앙 보안 서비스
+
+`templates/organization.yaml`의 `centralized_security` 섹션을 참조합니다.
+
+1. **조직 CloudTrail**
+   - 질문: "조직 전체 CloudTrail을 활성화하시겠습니까? (모든 계정의 API 로그를 중앙 수집) (y/n, 기본: y)"
+   - 비전문가: "CloudTrail은 모든 계정에서 누가 무엇을 했는지 기록합니다. 보안 감사에 필수입니다."
+   - y 선택 시: "로그 보관 기간: 30 / 60 / 90(기본) / 365일"
+
+2. **조직 GuardDuty**
+   - 질문: "GuardDuty(위협 탐지)를 조직 전체에 활성화하시겠습니까? (y/n, 기본: y)"
+   - 비전문가: "GuardDuty는 악의적 활동과 이상 행동을 자동으로 탐지합니다."
+   - y 선택 시: "신규 계정 자동 활성화: y/n (기본: y)"
+
+3. **조직 Security Hub**
+   - 질문: "Security Hub(보안 표준 모니터링)를 조직 전체에 활성화하시겠습니까? (y/n, 기본: y)"
+   - 비전문가: "Security Hub는 보안 모범 사례 준수 여부를 자동으로 평가합니다."
+   - y 선택 시: "적용할 보안 표준을 선택해주세요:"
+     - `1` AWS Foundational Security (기본, 권장)
+     - `2` CIS AWS Foundations (엄격한 보안)
+     - `3` 둘 다 (기본)
+
+4. **조직 Config**
+   - 질문: "AWS Config를 조직 전체에 활성화하시겠습니까? (리소스 변경 추적) (y/n, 기본: y)"
+   - 비전문가: "Config는 누가 어떤 리소스를 변경했는지 기록하고, 규정 준수를 검사합니다."
+
+### Phase 5-org: 공유 네트워크
+
+`templates/organization.yaml`의 `shared_networking` 섹션을 참조합니다.
+
+1. **Transit Gateway**
+   - 질문: "계정 간 네트워크 연결(Transit Gateway)이 필요합니까? (y/n, 기본: n)"
+   - 비전문가: "Transit Gateway는 여러 계정의 VPC를 하나의 네트워크 허브로 연결합니다. 계정 간 통신이 필요하면 활성화하세요."
+   - y 선택 시:
+     - "TGW를 공유할 범위: 조직 전체 / 특정 OU만 (기본: 특정 OU)"
+     - "Egress VPC(중앙 인터넷 출구)가 필요합니까? (y/n, 기본: n)"
+       - 비전문가: "Egress VPC를 사용하면 모든 계정의 인터넷 트래픽이 하나의 VPC를 통해 나갑니다. NAT Gateway 비용을 절감할 수 있습니다."
+   - 복잡한 네트워크 토폴로지 시 tf-architect 서브에이전트 호출
+
+### Phase 6-org: Account Baseline
+
+`templates/organization.yaml`의 `account_baseline` 섹션을 참조합니다.
+
+1. **Account Baseline 적용**
+   - 질문: "Account Baseline 보안 설정을 모든 계정에 적용하시겠습니까? (S3 퍼블릭 차단, EBS 암호화, IMDSv2 강제) (y/n, 기본: y)"
+   - 비전문가: "모든 계정에 기본 보안 설정을 자동 적용합니다. 강력히 권장합니다."
+
+2. **TerraformExecutionRole**
+   - 질문: "각 계정에 Terraform 실행용 IAM Role을 자동 생성하시겠습니까? (y/n, 기본: y)"
+   - 안내: "Management Account에서 AssumeRole로 다른 계정의 리소스를 관리합니다."
+
+### Phase 7-org: SSM Export
+
+`templates/organization.yaml`의 `ssm_exports` 섹션을 참조합니다.
+
+1. **SSM Export 확인**
+   - 안내: "org-foundation에서 생성한 리소스 정보를 SSM Parameter Store에 기록합니다. 이후 워크로드 프로젝트에서 이 값들을 참조합니다."
+   - 자동 export 항목 목록 표시:
+     ```
+     /org/organization-id        → Organization ID
+     /org/accounts/management    → Management Account ID
+     /org/accounts/security      → Security Account ID
+     /org/accounts/{name}        → 각 계정 ID
+     /org/networking/tgw-id      → Transit Gateway ID (TGW 활성화 시)
+     /org/logging/cloudtrail-bucket → CloudTrail S3 버킷명
+     /org/kms/{name}             → KMS Key ARN
+     ```
+   - 질문: "SSM Export prefix를 변경하시겠습니까? (기본: /org)"
+
+### Phase 8-org: 명세서 생성
+
+→ "명세서 생성 공통" 섹션의 org-foundation 파일 구조 참조
+
+### Phase 9-org: 확인 및 수정
+
+→ "확인 및 수정 공통" 섹션 참조
+
+---
+
+## 명세서 생성 공통
+
+### 파일 생성 규칙
 
 1. `templates/_base.yaml`을 읽고, 수집된 기본 정보로 값을 채웁니다.
-2. 선택된 카테고리의 템플릿 파일을 각각 읽습니다.
+2. 선택된 카테고리/섹션의 템플릿 파일을 각각 읽습니다.
 3. 사용자 응답에 따라 `enabled: true/false`를 설정하고, 세부 값을 채웁니다.
 4. 선택되지 않은 카테고리는 파일에 포함하지 않습니다.
 5. 비활성화된 하위 항목은 `enabled: false`로 유지하되, 주석 처리된 예시는 제거합니다.
 
-#### 파일 구조
+### specs 디렉토리 확인
+
+specs 디렉토리가 없으면 자동으로 생성합니다:
+```bash
+mkdir -p specs
+```
+
+### 워크로드 spec 파일 구조
 
 ```yaml
 # =============================================================================
@@ -318,85 +505,95 @@ AskUserQuestion으로 필요한 인프라 카테고리를 복수 선택하게 �
 # =============================================================================
 # Auto-generated by /tf-spec
 # Generated: {YYYY-MM-DD HH:MM:SS}
+# Type: workload
 # Environment: {environment}
 # Region: {region}
 # Account: {account_id}
 # =============================================================================
 
-# --- Base Configuration ---
 project:
   name: "{project-name}"
+  type: "workload"
   description: "{description}"
   environment: "{environment}"
   region: "{region}"
   account_id: "{account_id}"
-
   multi_account:
     enabled: {true/false}
-    management_account_id: "{management_account_id}"
-    security_account_id: "{security_account_id}"
-    assume_role_name: "TerraformExecutionRole"
+    # ...
 
 owner:
   team: "{team}"
-  cost_center: "{cost_center}"
-  contact_email: "{email}"
-
-tags: {}
+  # ...
 
 state:
   backend: "s3"
-  bucket: "{bucket_name}"
-  lock_table: "{lock_table_name}"
-  encrypt: true
+  # ...
 
-# --- Networking ---
+# 선택된 카테고리만 포함
 networking:
-  vpc:
-    enabled: true
-    cidr: "10.0.0.0/16"
-    # ... 수집된 값으로 채움
-
-# --- Compute ---
+  # ...
 compute:
-  ecs:
+  # ...
+```
+
+### org-foundation spec 파일 구조
+
+```yaml
+# =============================================================================
+# Infrastructure Spec - {project-name}
+# =============================================================================
+# Auto-generated by /tf-spec
+# Generated: {YYYY-MM-DD HH:MM:SS}
+# Type: org-foundation
+# Region: {region}
+# Management Account: {management_account_id}
+# =============================================================================
+
+project:
+  name: "{project-name}"
+  type: "org-foundation"
+  description: "{description}"
+  environment: "management"
+  region: "{region}"
+  account_id: "{management_account_id}"
+  multi_account:
     enabled: true
-    # ... 수집된 값으로 채움
+    # ...
 
-# ... 선택된 카테고리만 포함
+owner:
+  team: "{team}"
+  # ...
+
+state:
+  backend: "s3"
+  # ...
+
+organization:
+  # ...
+organizational_units:
+  # ...
+scps:
+  # ...
+accounts:
+  # ...
+delegated_administrators:
+  # ...
+centralized_security:
+  # ...
+shared_networking:
+  # ...
+account_baseline:
+  # ...
+ssm_exports:
+  # ...
 ```
 
-#### specs 디렉토리 확인
+---
 
-specs 디렉토리가 없으면 자동으로 생성합니다:
-```bash
-mkdir -p specs
-```
+## 확인 및 수정 공통
 
-### Phase 5: 확인 및 수정
-
-1. 생성된 spec의 요약을 표 형태로 출력합니다:
-
-```
-## 인프라 명세서 요약: {project-name}
-
-### 기본 정보
-| 항목 | 값 |
-|------|-----|
-| 프로젝트 | {project-name} |
-| 환경 | {environment} |
-| 리전 | {region} |
-| 계정 | {account_id} |
-| 담당 팀 | {team} |
-
-### 선택된 인프라
-| 카테고리 | 주요 구성 | 상태 |
-|----------|-----------|------|
-| 네트워크 | VPC 10.0.0.0/16, 2 AZ, NAT(단일) | 활성 |
-| 컴퓨팅 | ECS Fargate x2 서비스 | 활성 |
-| 데이터베이스 | RDS PostgreSQL db.t3.medium | 활성 |
-| ... | ... | ... |
-```
+1. 생성된 spec의 요약을 표 형태로 출력합니다. (타입에 따라 포맷 다름)
 
 2. AskUserQuestion으로 확인 요청:
    - "위 명세서를 확인해주세요. 수정할 부분이 있으시면 말씀해주세요. 확정하려면 '확인' 또는 'ok'를 입력해주세요."
@@ -407,13 +604,14 @@ mkdir -p specs
    - 수정된 요약 재출력
 
 4. 확정 시 안내 메시지:
-
 ```
 명세서가 확정되었습니다: specs/{project-name}-spec.yaml
 
 다음 단계:
   /project:tf-generate specs/{project-name}-spec.yaml
 ```
+
+---
 
 ## Expert Mode
 
@@ -422,7 +620,14 @@ mkdir -p specs
 ```
 
 `--from` 옵션으로 카테고리를 미리 지정하면 Phase 2를 건너뛰고 바로 Phase 3로 진입합니다.
+Phase 0의 프로젝트 타입은 `workload`로 자동 설정됩니다.
 Phase 1의 기본 정보 수집은 여전히 수행됩니다.
+
+org-foundation 전용 단축:
+```
+/project:tf-spec my-org --type org-foundation
+```
+`--type org-foundation` 옵션으로 Phase 0을 건너뛰고 바로 Phase 1-org로 진입합니다.
 
 사용 가능한 카테고리 파일:
 - `templates/networking.yaml`
@@ -431,6 +636,7 @@ Phase 1의 기본 정보 수집은 여전히 수행됩니다.
 - `templates/storage.yaml`
 - `templates/security.yaml`
 - `templates/monitoring.yaml`
+- `templates/organization.yaml`
 
 ## Argument Parsing
 
@@ -438,15 +644,22 @@ $ARGUMENTS에서 프로젝트명과 옵션을 파싱합니다:
 ```
 입력: "my-service --from templates/networking.yaml,templates/compute.yaml"
 → project_name: "my-service"
+→ project_type: "workload"
 → from_templates: ["templates/networking.yaml", "templates/compute.yaml"]
+
+입력: "my-org --type org-foundation"
+→ project_name: "my-org"
+→ project_type: "org-foundation"
+→ from_templates: []
 
 입력: "payment-api"
 → project_name: "payment-api"
+→ project_type: null (Phase 0에서 선택)
 → from_templates: [] (Phase 2에서 선택)
 ```
 
 프로젝트명이 없으면 AskUserQuestion으로 질문합니다:
-- "프로젝트 식별자를 입력해주세요 (예: my-web-service, payment-api)"
+- "프로젝트 식별자를 입력해주세요 (예: my-web-service, my-org)"
 
 ## Guidelines
 
@@ -457,15 +670,19 @@ $ARGUMENTS에서 프로젝트명과 옵션을 파싱합니다:
   - 예: "CIDR 블록" 대신 "네트워크 규모"
   - 예: "Multi-AZ" 대신 "고가용성(서버 장애 시 자동 복구)"
   - 예: "Fargate" 대신 "서버리스 컨테이너(서버 관리 불필요)"
+  - 예: "SCP" 대신 "계정 보안 정책(할 수 있는 작업의 최대 범위 제한)"
+  - 예: "Transit Gateway" 대신 "계정 간 네트워크 연결 허브"
 - CIDR, 리전, 인스턴스 타입, 계정 ID 등은 **유효성을 검증**합니다.
   - 잘못된 입력 시 이유를 설명하고 재입력 요청
-- **환경별 기본값 차별화**:
+- **환경별 기본값 차별화** (워크로드):
   - dev: 비용 최적화 (단일 AZ NAT, 소규모 인스턴스, Multi-AZ 미사용)
   - staging: dev와 동일하되 prod과 비슷한 구조
   - prod: 고가용성 (다중 AZ NAT, 대규모 인스턴스, Multi-AZ, 삭제 보호)
+- **org-foundation 기본값**: 보안 최우선 (SCP 전체 활성, 보안 서비스 전체 활성, 기본 암호화)
 - **이전 선택에 따른 조건부 질문**: 불필요한 질문은 건너뜁니다.
   - 예: Private Only 서브넷 선택 시 NAT Gateway 질문 생략
   - 예: Lambda만 선택 시 Auto Scaling 질문 생략
+  - 예: TGW 비활성화 시 라우트 테이블/RAM 공유 질문 생략
 - **복잡한 설계 판단**이 필요한 경우 tf-architect 서브에이전트를 호출하여 권장 사항을 제공합니다.
 - spec 파일 생성 시 반드시 해당 카테고리의 **템플릿 파일을 읽어서** 정확한 YAML 구조를 따릅니다.
 - 사용자가 중간에 이전 단계를 수정하고 싶다고 하면 해당 단계로 돌아갑니다.
