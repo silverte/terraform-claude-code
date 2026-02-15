@@ -21,10 +21,43 @@
 /project:tf-review .
 ```
 
+## MCP 서버 활용
+
+리뷰 과정에서 MCP 서버를 활용하여 최신 보안 기준과 베스트 프랙티스를 적용합니다.
+
+### Well-Architected Security MCP (`awslabs.well-architected-security-mcp-server`)
+- **Security Pillar 평가**: 리뷰 대상 코드가 Well-Architected Security Pillar의 베스트 프랙티스를 준수하는지 자동 평가
+- **활용 시점**: Phase 1(Security Review) 시작 시 호출하여 평가 기준으로 사용
+  ```
+  예: IAM 정책 리뷰 시 → SEC01(보안 기반) 기준 평가
+  예: 데이터 보호 리뷰 시 → SEC08(저장 중 데이터 보호), SEC09(전송 중 데이터 보호) 평가
+  예: 인시던트 대응 리뷰 시 → SEC10(인시던트 대응) 기준 확인
+  ```
+
+### AWS Documentation MCP (`awslabs.aws-documentation-mcp-server`)
+- **최신 보안 권장 사항 조회**: IAM 정책 베스트 프랙티스, SCP 가이드라인, 암호화 요구사항 등
+- **서비스별 보안 설정 확인**: 리소스별 권장 보안 구성 참조
+- **활용 시점**: Phase 1(Security Review) 및 Phase 4(Best Practices) 시
+  ```
+  예: S3 버킷 보안 리뷰 시 → S3 보안 베스트 프랙티스 문서 참조
+  예: EKS 보안 리뷰 시 → EKS 보안 가이드 참조
+  ```
+
+### Terraform MCP (`awslabs.terraform-mcp-server`)
+- **deprecated 속성 확인**: 사용 중인 리소스 속성이 deprecated되지 않았는지 검증
+- **최신 권장 설정 확인**: 리소스별 최신 보안 관련 속성 확인
+- **활용 시점**: Phase 3(Code Quality) 시
+  ```
+  예: aws_s3_bucket 리뷰 시 → bucket ACL deprecated 여부 확인
+  예: aws_instance 리뷰 시 → metadata_options의 최신 권장 값 확인
+  ```
+
 ## Review Process
 
 ### Phase 1: Security Review
 **tf-security-reviewer 서브에이전트 호출**
+
+**Well-Architected Security MCP 호출**: Security Pillar 기반 평가 체크리스트를 조회하여 리뷰 기준으로 활용합니다.
 
 #### IAM 정책 검토
 - 와일드카드 사용 여부
@@ -63,7 +96,7 @@
 - 스토리지 티어링
 
 ### Phase 3: Code Quality
-**자동화된 도구 실행**
+**자동화된 도구 실행 + Terraform MCP로 deprecated 속성 검증**
 
 ```bash
 # 포맷팅 검사

@@ -661,6 +661,36 @@ $ARGUMENTS에서 프로젝트명과 옵션을 파싱합니다:
 프로젝트명이 없으면 AskUserQuestion으로 질문합니다:
 - "프로젝트 식별자를 입력해주세요 (예: my-web-service, my-org)"
 
+## MCP 서버 활용
+
+각 질문 단계에서 MCP 서버를 활용하여 정확한 정보를 제공합니다.
+
+### Terraform MCP (`awslabs.terraform-mcp-server`)
+- **리소스 속성 검증**: 사용자가 입력한 값(인스턴스 타입, 엔진 버전, 파라미터 등)이 실제 Terraform Provider에서 지원되는지 확인
+- **최신 기본값 확인**: EKS 버전, RDS 엔진 버전, Lambda 런타임 등 자주 변경되는 기본값을 최신으로 제공
+- **활용 시점**: Phase 3(카테고리별 상세 질문) 중 컴퓨팅/DB/네트워크 세부 설정 질문 시
+  ```
+  예: EKS 버전 질문 전 → Terraform MCP로 aws_eks_cluster의 지원 버전 확인
+  예: RDS 엔진 선택 시 → Terraform MCP로 aws_db_instance의 engine_version 옵션 확인
+  ```
+
+### AWS Documentation MCP (`awslabs.aws-documentation-mcp-server`)
+- **서비스 제한/할당량 안내**: 리전별 가용영역 수, 계정별 VPC 한도, SCP 한도 등
+- **베스트 프랙티스 참조**: Organizations OU 구조, SCP 작성, Transit Gateway 설계 권장 사항
+- **활용 시점**: Phase 2-org(OU 구조), Phase 3-org(SCP), Phase 5-org(공유 네트워크) 등 조직 설계 질문 시
+  ```
+  예: OU 구조 질문 시 → AWS Docs에서 Organizations 베스트 프랙티스 참조
+  예: SCP 작성 시 → AWS Docs에서 SCP 예제 및 제한 사항 참조
+  ```
+
+### Well-Architected Security MCP (`awslabs.well-architected-security-mcp-server`)
+- **보안 권장 사항 제공**: Security Hub 표준, GuardDuty 구성, CloudTrail 설정 관련 권장 사항
+- **활용 시점**: Phase 4-org(중앙 보안), 워크로드 보안 질문(Phase 3 보안 카테고리) 시
+  ```
+  예: Security Hub 표준 선택 시 → Well-Architected Security에서 권장 표준 확인
+  예: Account Baseline 설정 시 → Security Pillar 체크리스트 참조
+  ```
+
 ## Guidelines
 
 - **한 번에 하나의 질문만** 합니다. 여러 질문을 한꺼번에 하지 마세요.
