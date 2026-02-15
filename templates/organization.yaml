@@ -1,0 +1,293 @@
+# =============================================================================
+# Organization Template - AWS Organizations, OU, SCP, 중앙 보안, 공유 네트워크
+# =============================================================================
+# org-foundation 프로젝트 타입 선택 시 사용되는 템플릿입니다.
+# Management Account에서 실행하며, 조직 전체의 거버넌스를 설정합니다.
+
+# -----------------------------------------------------------------------------
+# 1. AWS Organizations 기본 설정
+# -----------------------------------------------------------------------------
+organization:
+  enabled: true
+  feature_set: "ALL"                      # ALL | CONSOLIDATED_BILLING
+  aws_service_access_principals:          # 조직 레벨 서비스 접근 활성화
+    - cloudtrail.amazonaws.com
+    - config.amazonaws.com
+    - guardduty.amazonaws.com
+    - securityhub.amazonaws.com
+    - sso.amazonaws.com
+    - ram.amazonaws.com
+    - tagpolicies.tag.amazonaws.com
+
+# -----------------------------------------------------------------------------
+# 2. Organizational Units (OU) 구조
+# -----------------------------------------------------------------------------
+organizational_units:
+  # 권장 OU 구조 (AWS 베스트 프랙티스 기반)
+  # 커스텀 구조가 필요하면 아래를 수정하세요.
+  - name: "Core"                           # 핵심 인프라 계정
+    scps: []
+    children: []
+
+  - name: "Infrastructure"                 # 공유 인프라 계정
+    scps: []
+    children: []
+
+  - name: "Workloads"                      # 워크로드 계정
+    scps: []
+    children:
+      - name: "Dev"
+      - name: "Staging"
+      - name: "Prod"
+
+  - name: "Sandbox"                        # 실험/테스트용 계정
+    scps: []
+    children: []
+
+# -----------------------------------------------------------------------------
+# 3. Service Control Policies (SCP)
+# -----------------------------------------------------------------------------
+scps:
+  enabled: true
+
+  policies:
+    - name: "deny-root"
+      enabled: true
+      description: "루트 계정 사용 차단"
+      targets: []                          # OU 이름 목록 (빈 배열 = 전체 적용)
+      # targets: ["Workloads", "Sandbox"]
+
+    - name: "allowed-regions"
+      enabled: true
+      description: "허용 리전 제한"
+      allowed_regions:                     # 허용할 AWS 리전 목록
+        - "ap-northeast-2"
+        - "us-east-1"                      # IAM, CloudFront 등 글로벌 서비스
+      targets: []
+
+    - name: "deny-public-s3"
+      enabled: true
+      description: "퍼블릭 S3 버킷 생성 차단"
+      targets: []
+
+    - name: "deny-leave-org"
+      enabled: true
+      description: "조직 탈퇴 차단"
+      targets: []
+
+    # - name: "deny-expensive-services"
+    #   enabled: false
+    #   description: "고비용 서비스 사용 제한 (Sandbox용)"
+    #   denied_services:
+    #     - "redshift:*"
+    #     - "emr:*"
+    #     - "sagemaker:*"
+    #   targets: ["Sandbox"]
+
+# -----------------------------------------------------------------------------
+# 4. 계정 관리
+# -----------------------------------------------------------------------------
+accounts:
+  enabled: false                           # 기존 계정 사용 시 false
+  # 새 계정 생성이 필요하면 enabled: true로 변경
+
+  # vend_accounts:
+  #   - name: "security"
+  #     email: "aws+security@example.com"
+  #     ou: "Core"
+  #     baseline: true                     # account_baseline 자동 적용
+
+  #   - name: "log-archive"
+  #     email: "aws+log@example.com"
+  #     ou: "Core"
+  #     baseline: true
+
+  #   - name: "shared-services"
+  #     email: "aws+shared@example.com"
+  #     ou: "Infrastructure"
+  #     baseline: true
+
+  #   - name: "dev"
+  #     email: "aws+dev@example.com"
+  #     ou: "Workloads/Dev"
+  #     baseline: true
+
+  #   - name: "staging"
+  #     email: "aws+staging@example.com"
+  #     ou: "Workloads/Staging"
+  #     baseline: true
+
+  #   - name: "prod"
+  #     email: "aws+prod@example.com"
+  #     ou: "Workloads/Prod"
+  #     baseline: true
+
+  # 기존 계정 ID 매핑 (account vending 미사용 시)
+  existing_accounts:
+    management: ""                         # Management Account ID
+    security: ""                           # Security Account ID
+    log_archive: ""                        # Log Archive Account ID
+    shared_services: ""                    # Shared Services Account ID
+    dev: ""                                # Dev Account ID
+    staging: ""                            # Staging Account ID
+    prod: ""                               # Prod Account ID
+
+# -----------------------------------------------------------------------------
+# 5. 위임 관리자 (Delegated Administrators)
+# -----------------------------------------------------------------------------
+delegated_administrators:
+  enabled: true
+  services:
+    - service: "guardduty.amazonaws.com"
+      account: "security"                  # accounts.existing_accounts의 키 참조
+    - service: "securityhub.amazonaws.com"
+      account: "security"
+    - service: "config.amazonaws.com"
+      account: "security"
+    # - service: "access-analyzer.amazonaws.com"
+    #   account: "security"
+
+# -----------------------------------------------------------------------------
+# 6. 중앙 보안 서비스 (조직 레벨)
+# -----------------------------------------------------------------------------
+centralized_security:
+
+  # 조직 CloudTrail (모든 계정의 API 로그를 중앙 수집)
+  cloudtrail:
+    enabled: true
+    is_organization_trail: true            # 조직 전체 Trail
+    is_multi_region: true
+    enable_log_file_validation: true
+    include_global_service_events: true
+    s3_bucket_account: "log_archive"       # 로그 저장 계정
+    kms_encryption: true                   # KMS 암호화 사용
+    retention_days: 90                     # CloudWatch Logs 보관 기간
+
+  # 조직 GuardDuty (위협 탐지)
+  guardduty:
+    enabled: true
+    auto_enable_new_accounts: true         # 신규 계정 자동 활성화
+    s3_protection: true
+    eks_protection: false                  # EKS 사용 시 true
+    malware_protection: true
+    finding_publishing_frequency: "FIFTEEN_MINUTES"
+
+  # 조직 Security Hub (보안 표준 준수)
+  security_hub:
+    enabled: true
+    auto_enable_new_accounts: true
+    standards:
+      - "aws-foundational-security-best-practices"
+      - "cis-aws-foundations-benchmark"
+    # - "pci-dss"
+
+  # 조직 Config (리소스 구성 추적)
+  config:
+    enabled: true
+    aggregator_account: "security"         # Config Aggregator 계정
+    s3_bucket_account: "log_archive"       # Config 로그 저장 계정
+    recording_frequency: "CONTINUOUS"
+    rules:
+      - "s3-bucket-public-read-prohibited"
+      - "encrypted-volumes"
+      - "iam-password-policy"
+      - "root-account-mfa-enabled"
+      - "cloudtrail-enabled"
+      - "restricted-ssh"
+
+# -----------------------------------------------------------------------------
+# 7. 공유 네트워크
+# -----------------------------------------------------------------------------
+shared_networking:
+
+  # Transit Gateway (계정 간 네트워크 허브)
+  transit_gateway:
+    enabled: false
+    amazon_side_asn: 64512
+    auto_accept_shared_attachments: true
+    vpn_ecmp_support: true
+    default_route_table_association: "disable"  # 커스텀 라우팅 사용
+    default_route_table_propagation: "disable"
+
+    # RAM (Resource Access Manager) 공유
+    ram_share:
+      enabled: true
+      share_with_organization: false       # 조직 전체 공유
+      share_with_ous: []                   # 특정 OU에만 공유
+        # - "Workloads"
+        # - "Infrastructure"
+
+    # TGW 라우트 테이블
+    route_tables:
+      - name: "spoke-workloads"
+        description: "워크로드 VPC 간 격리된 라우팅"
+      - name: "shared-services"
+        description: "공유 서비스 접근 라우팅"
+      - name: "egress"
+        description: "인터넷 아웃바운드 라우팅"
+
+  # Egress VPC (중앙 NAT Gateway)
+  egress_vpc:
+    enabled: false
+    account: "shared_services"             # Egress VPC 배치 계정
+    cidr: "10.255.0.0/16"
+    availability_zones:
+      - "ap-northeast-2a"
+      - "ap-northeast-2c"
+    subnets:
+      public:
+        cidrs:
+          - "10.255.1.0/24"
+          - "10.255.2.0/24"
+      private:
+        cidrs:
+          - "10.255.10.0/24"
+          - "10.255.11.0/24"
+    nat_gateway:
+      single_az: false                     # Egress VPC는 다중 AZ 권장
+
+# -----------------------------------------------------------------------------
+# 8. Account Baseline (모든 계정에 적용할 보안 기본값)
+# -----------------------------------------------------------------------------
+account_baseline:
+  enabled: true
+
+  s3_public_access_block: true             # S3 퍼블릭 액세스 차단
+  ebs_default_encryption: true             # EBS 기본 암호화
+  imdsv2_required: true                    # EC2 메타데이터 v2 강제
+
+  iam_password_policy:
+    enabled: true
+    minimum_length: 14
+    require_uppercase: true
+    require_lowercase: true
+    require_numbers: true
+    require_symbols: true
+    max_age_days: 90
+
+  # 각 계정에 생성할 Terraform 실행 역할
+  terraform_execution_role:
+    enabled: true
+    role_name: "TerraformExecutionRole"
+    trust_account: "management"            # 이 계정만 AssumeRole 허용
+    max_session_duration: 3600             # 1시간
+
+# -----------------------------------------------------------------------------
+# 9. SSM Parameter Store Export
+# -----------------------------------------------------------------------------
+# org-foundation이 생성한 리소스 정보를 SSM에 기록합니다.
+# 워크로드 프로젝트가 dependencies.from_org_foundation으로 참조합니다.
+ssm_exports:
+  enabled: true
+  prefix: "/org"                           # SSM 파라미터 프리픽스
+
+  # 자동 export 항목 (enabled된 리소스에서 자동 생성)
+  auto_export:
+    organization_id: true                  # /org/organization-id
+    management_account_id: true            # /org/accounts/management
+    account_ids: true                      # /org/accounts/{name}
+    ou_ids: true                           # /org/ous/{name}
+    transit_gateway_id: true               # /org/networking/tgw-id
+    cloudtrail_bucket: true                # /org/logging/cloudtrail-bucket
+    config_bucket: true                    # /org/logging/config-bucket
+    kms_keys: true                         # /org/kms/{name}

@@ -8,6 +8,7 @@
 
 ## 핵심 워크플로우
 
+### 워크로드 배포 (VPC, EC2, ECS, RDS 등)
 ```
 /tf-spec <name>       → 대화형 요구사항 수집 → specs/{name}-spec.yaml
                               ↓
@@ -18,18 +19,34 @@
 /tf-plan <env>        → terraform plan 실행 및 검증
 ```
 
+### 조직 기반 설정 (Organizations, OU, SCP, 중앙 보안, TGW)
+```
+/tf-spec <name>       → "조직 기반 설정" 선택 → specs/{name}-spec.yaml
+                              ↓
+/tf-generate <spec>   → 3단계 코드 생성:
+                         → environments/org-foundation/01-organization/
+                         → environments/org-foundation/02-security-baseline/
+                         → environments/org-foundation/03-shared-networking/
+                              ↓
+/tf-review <path>     → 보안/비용/품질 종합 검토
+                              ↓
+/tf-plan management   → 순서대로 Plan 확인
+```
+
 ### 사용 예시
 ```bash
-# 1. 대화형으로 요구사항 수집
+# === 조직 기반 설정 (먼저 실행) ===
+/project:tf-spec my-org
+# → "조직 기반 설정" 선택 → Organizations, OU, SCP, 보안 서비스 구성
+/project:tf-generate specs/my-org-spec.yaml
+/project:tf-review environments/org-foundation
+/project:tf-plan management
+
+# === 워크로드 배포 (org-foundation 이후) ===
 /project:tf-spec my-web-service
-
-# 2. 명세서 기반으로 Terraform 코드 생성
+# → "워크로드 배포" 선택 → VPC, ECS, RDS 등 구성
 /project:tf-generate specs/my-web-service-spec.yaml
-
-# 3. 생성된 코드 검토
 /project:tf-review environments/dev
-
-# 4. Plan 확인
 /project:tf-plan dev
 ```
 
@@ -52,7 +69,8 @@
 │       └── tf-review.md             # 종합 리뷰
 ├── templates/                        # YAML 요구사항 템플릿
 │   ├── _base.yaml                   # 공통 (프로젝트, 환경, 태그)
-│   ├── networking.yaml              # VPC, 서브넷, NAT, TGW
+│   ├── organization.yaml            # Organizations, OU, SCP, 중앙 보안, TGW
+│   ├── networking.yaml              # VPC, 서브넷, NAT, TGW Attachment
 │   ├── compute.yaml                 # EC2, ECS, EKS, Lambda
 │   ├── database.yaml                # RDS, DynamoDB, ElastiCache
 │   ├── storage.yaml                 # S3, EFS, FSx
@@ -60,7 +78,21 @@
 │   └── monitoring.yaml              # CloudWatch, CloudTrail
 ├── specs/                            # 생성된 요구사항 명세서
 ├── modules/                          # Terraform 모듈
+│   ├── organization/                # 조직 레벨 모듈
+│   ├── networking/                  # 네트워크 모듈
+│   ├── compute/                     # 컴퓨팅 모듈
+│   ├── database/                    # 데이터베이스 모듈
+│   ├── storage/                     # 스토리지 모듈
+│   ├── security/                    # 보안 모듈
+│   └── monitoring/                  # 모니터링 모듈
 ├── environments/                     # 환경별 배포 설정
+│   ├── org-foundation/              # 조직 기반 (3단계)
+│   │   ├── 01-organization/         # Organizations, OU, SCP
+│   │   ├── 02-security-baseline/    # CloudTrail, GuardDuty, SecurityHub
+│   │   └── 03-shared-networking/    # Transit Gateway, Egress VPC
+│   ├── dev/                         # Dev 워크로드
+│   ├── staging/                     # Staging 워크로드
+│   └── prod/                        # Prod 워크로드
 └── docs/plans/                       # 설계/구현 문서
 ```
 
@@ -68,13 +100,16 @@
 
 ### YAML 명세서 스키마
 - `templates/_base.yaml`: 모든 명세서의 공통 필드 (필수)
-- `templates/{category}.yaml`: 카테고리별 인프라 설정
+- `templates/organization.yaml`: org-foundation 전용 (Organizations, OU, SCP, 보안, 네트워크)
+- `templates/{category}.yaml`: 워크로드 카테고리별 인프라 설정
 - 모든 선택적 기능은 `enabled: true/false` 패턴 사용
 - 모든 필드에 기본값 존재 (비전문가 지원)
+- `project.type`: `workload` | `org-foundation` 으로 프로젝트 타입 구분
 
 ### 명세서 생성 규칙
 - `/tf-spec`으로 생성된 파일은 `specs/{name}-spec.yaml`에 저장
-- 명세서는 `_base.yaml` + 선택된 카테고리 템플릿의 조합
+- 워크로드: `_base.yaml` + 선택된 카테고리 템플릿의 조합
+- org-foundation: `_base.yaml` + `organization.yaml` 조합
 - 사용자 확인 후 확정
 
 ## 계정 구조
@@ -198,6 +233,10 @@ variable "instance_type" {
 ### State 파일 경로
 ```
 s3://{bucket}/
+├── org-foundation/
+│   ├── organization/terraform.tfstate
+│   ├── security-baseline/terraform.tfstate
+│   └── shared-networking/terraform.tfstate
 ├── dev/terraform.tfstate
 ├── staging/terraform.tfstate
 └── prod/terraform.tfstate
