@@ -1,0 +1,40 @@
+# =============================================================================
+# Storage Template - S3, EFS, FSx
+# =============================================================================
+
+storage:
+
+  s3:
+    enabled: false
+    # buckets: []
+    #   - name: "app-assets"
+    #     versioning: true
+    #     encryption:
+    #       type: "SSE-S3"
+    #       kms_key_id: ""
+    #     public_access_block: true
+    #     lifecycle_rules: []
+    #     cors_rules: []
+    #     logging:
+    #       enabled: false
+    #       target_bucket: ""
+    #     replication:
+    #       enabled: false
+    #       destination_bucket: ""
+    #       destination_region: ""
+
+  efs:
+    enabled: false
+    # file_systems: []
+    #   - name: "shared-data"
+    #     performance_mode: "generalPurpose"
+    #     throughput_mode: "bursting"
+    #     encrypted: true
+    #     lifecycle_policy: "AFTER_30_DAYS"
+    #     backup_policy: true
+
+  fsx:
+    enabled: false
+    # type: "LUSTRE"
+    # storage_capacity: 1200
+    # deployment_type: "PERSISTENT_2"
