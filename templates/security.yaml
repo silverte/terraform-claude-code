@@ -1,0 +1,75 @@
+# =============================================================================
+# Security Template - IAM, SCP, WAF, GuardDuty, Security Hub, KMS
+# =============================================================================
+
+security:
+
+  iam:
+    password_policy:
+      enabled: true
+      minimum_length: 14
+      require_uppercase: true
+      require_lowercase: true
+      require_numbers: true
+      require_symbols: true
+      max_age_days: 90
+
+    roles: []
+    # roles:
+    #   - name: "app-execution-role"
+    #     description: "앱 실행 역할"
+    #     assume_role_policy:
+    #       service: "ecs-tasks.amazonaws.com"
+    #     managed_policies: []
+    #     inline_policies: []
+
+  scp:
+    enabled: false
+    # policies: []
+    #   - name: "deny-root"
+    #     description: "루트 계정 사용 차단"
+    #   - name: "allowed-regions"
+    #     description: "허용 리전 제한"
+    #     allowed_regions: ["ap-northeast-2", "us-east-1"]
+    #   - name: "deny-public-s3"
+    #     description: "퍼블릭 S3 차단"
+
+  waf:
+    enabled: false
+    # scope: "REGIONAL"
+    # rules: []
+    #   - name: "rate-limit"
+    #     priority: 1
+    #     action: "block"
+    #     rate_limit: 2000
+    #   - name: "aws-managed-common"
+    #     priority: 2
+    #     managed_rule_group: "AWSManagedRulesCommonRuleSet"
+
+  guardduty:
+    enabled: true
+    # s3_protection: true
+    # eks_protection: false
+    # malware_protection: true
+
+  security_hub:
+    enabled: true
+    # standards:
+    #   - "aws-foundational-security-best-practices"
+    #   - "cis-aws-foundations-benchmark"
+
+  kms:
+    enabled: false
+    # keys: []
+    #   - name: "app-key"
+    #     description: "앱 데이터 암호화 키"
+    #     key_usage: "ENCRYPT_DECRYPT"
+    #     deletion_window: 30
+    #     enable_rotation: true
+    #     aliases: ["alias/app-key"]
+
+  account_baseline:
+    enabled: true
+    s3_public_access_block: true
+    ebs_default_encryption: true
+    imdsv2_required: true
