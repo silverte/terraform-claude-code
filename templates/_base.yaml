@@ -31,3 +31,19 @@ state:
   bucket: ""                        # S3 State 버킷명
   lock_table: ""                    # DynamoDB 락 테이블명
   encrypt: true                     # State 암호화 여부
+
+# org-foundation 프로젝트 의존성 (SSM Parameter Store 기반)
+# org-foundation이 SSM에 기록한 값을 이 프로젝트에서 참조합니다.
+dependencies:
+  from_org_foundation:
+    enabled: false
+    ssm_prefix: "/org"              # SSM 파라미터 프리픽스
+
+    # 참조할 리소스 (enabled 시 data.aws_ssm_parameter로 자동 생성)
+    accounts: false                 # /org/accounts/{name} → 계정 ID
+    transit_gateway: false          # /org/networking/tgw-id → TGW 연동
+    centralized_logging: false      # /org/logging/cloudtrail-bucket, config-bucket
+    shared_kms_keys: []             # /org/kms/{name} → 공유 KMS Key ARN
+    # shared_kms_keys:
+    #   - "default"
+    #   - "rds"
