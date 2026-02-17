@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "omc-tools": {
+      "command": "node",
+      "args": ["/Users/born2k/.claude/plugins/marketplaces/omc/bridge/mcp-server.cjs"]
+    },
     "awslabs.core-mcp-server": {
       "command": "uvx",
       "args": ["awslabs.core-mcp-server@latest"],
