@@ -34,6 +34,13 @@ Thumbs.db
 # Keep .claude/ directory but ignore potential sensitive files
 .claude/cache/
 
+# OMC (oh-my-claudecode)
+# 프로젝트 지식은 추적, 세션 상태는 제외
+.omc/state/
+.omc/logs/
+.omc/research/
+.omc/plans/
+
 # Logs
 *.log
 logs/
