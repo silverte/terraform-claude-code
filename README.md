@@ -40,15 +40,14 @@ claude
 # Step 1: 대화형으로 요구사항 수집
 /tf-spec my-web-service
 
-# Step 2: Terraform 코드 생성
-/tf-generate specs/my-web-service-spec.yaml
+# Step 2: 코드 생성 + 품질 검증 (권장)
+/tf-build specs/my-web-service-spec.yaml
 
-# Step 3: 코드 리뷰
-/tf-review environments/dev
-
-# Step 4: Plan 확인
+# Step 3: Plan 확인
 /tf-plan dev
 ```
+
+> 개별 실행이 필요한 경우: `/tf-generate` → `/tf-review` → `/tf-plan`
 
 ### 3. 조직 기반 설정 (Organizations, SCP, 보안)
 
@@ -57,26 +56,27 @@ claude
 /tf-spec my-org
 # → "조직 기반 설정" 선택
 
-# Step 2: 3단계 Terraform 코드 생성
-/tf-generate specs/my-org-spec.yaml
+# Step 2: 3단계 코드 생성 + 품질 검증 (권장)
+/tf-build specs/my-org-spec.yaml
 
-# Step 3: 코드 리뷰
-/tf-review environments/org-foundation
-
-# Step 4: 순서대로 Plan 확인
+# Step 3: 순서대로 Plan 확인
 /tf-plan management
 ```
 
 ## 워크플로우
 
+**권장 (3단계 - `/tf-build` 사용):**
 ```
-/tf-spec        대화형 요구사항 수집     specs/{name}-spec.yaml
+/tf-spec     대화형 요구사항 수집        specs/{name}-spec.yaml
     ↓
-/tf-generate    명세서 → 코드 생성      environments/ + modules/
+/tf-build    코드 생성 + 품질 검증       environments/ + modules/ + 리뷰 리포트
     ↓
-/tf-review      보안/비용/품질 리뷰      리뷰 리포트
-    ↓
-/tf-plan        terraform plan          변경사항 확인
+/tf-plan     terraform plan             변경사항 확인
+```
+
+**개별 실행 (4단계):**
+```
+/tf-spec → /tf-generate → /tf-review → /tf-plan
 ```
 
 ## 커맨드 상세
@@ -111,6 +111,19 @@ claude
 | Account Baseline | S3 퍼블릭 차단, EBS 암호화, IMDSv2 강제 |
 
 비전문가도 사용할 수 있도록 기술 용어 대신 목적 기반 질문을 제공합니다.
+
+### `/tf-build <spec-file>` (권장)
+
+코드 생성과 품질 검증을 한번에 실행합니다. `/tf-generate` + `/tf-review`를 통합한 워크플로우입니다.
+
+| Phase | 단계 | 내용 |
+|-------|------|------|
+| 1 | 명세서 분석 | YAML 파싱 + 의존성 그래프 |
+| 2 | MCP 데이터 수집 | Provider 속성 + AWS 문서 (1회 수집, 이후 재사용) |
+| 3 | 코드 생성 | 모듈 병렬 생성 + 환경 코드 |
+| 4 | 자동 수정 | fmt, validate, tfsec 검사 + Critical/High 자동 수정 |
+| 5 | 품질 검증 | 보안/비용 병렬 리뷰 (MCP 데이터 재사용) |
+| 6 | 최종 리포트 | 종합 점수 + 다음 단계 안내 |
 
 ### `/tf-generate <spec-file>`
 
@@ -171,8 +184,9 @@ Terraform Plan을 실행하고 변경사항을 분석합니다.
 │   │   ├── tf-security-reviewer.md  # 보안 검토
 │   │   ├── tf-cost-analyzer.md      # 비용 분석
 │   │   └── tf-module-developer.md   # 모듈 개발
-│   └── commands/                    # 슬래시 커맨드 (4개)
+│   └── commands/                    # 슬래시 커맨드 (5개)
 │       ├── tf-spec.md               # 요구사항 수집
+│       ├── tf-build.md              # 코드 생성 + 품질 검증 통합 (권장)
 │       ├── tf-generate.md           # 코드 생성
 │       ├── tf-review.md             # 종합 리뷰
 │       └── tf-plan.md               # Plan 실행
@@ -193,14 +207,13 @@ Terraform Plan을 실행하고 변경사항을 분석합니다.
 
 ## AWS MCP 서버
 
-이 프로젝트는 4개의 AWS MCP 서버를 활용하여 정확한 코드를 생성합니다.
+이 프로젝트는 3개의 AWS MCP 서버를 활용하여 정확한 코드를 생성합니다.
 
 | MCP 서버 | 역할 | 활용 시점 |
 |----------|------|-----------|
 | Terraform MCP | Provider 리소스 속성 조회 | 모듈 생성, 속성 검증, 오류 해결 |
 | AWS Documentation MCP | 공식 문서 검색 | 서비스 제한, 베스트 프랙티스, 가격 정보 |
 | Well-Architected Security MCP | Security Pillar 평가 | 보안 리뷰, 아키텍처 평가 |
-| Core MCP | 워크플로우 조율 | 복합 작업 계획 |
 
 MCP 서버는 `.mcp.json`에 설정되어 있으며, `uv`가 설치되어 있으면 자동으로 사용됩니다.
 
@@ -236,15 +249,15 @@ Organization Root
 /tf-spec my-org
 # → Organizations, OU, SCP, 보안 서비스, Account Baseline 구성
 
-/tf-generate specs/my-org-spec.yaml
-# → 01-organization, 02-security-baseline, 03-shared-networking 생성
+/tf-build specs/my-org-spec.yaml
+# → 3단계 코드 생성 + 보안/비용 품질 검증
 
 # 2. 워크로드 배포
 /tf-spec payment-api
 # → VPC, ECS Fargate, Aurora PostgreSQL, WAF 구성
 
-/tf-generate specs/payment-api-spec.yaml
-# → environments/dev/ 코드 생성
+/tf-build specs/payment-api-spec.yaml
+# → environments/dev/ 코드 생성 + 품질 검증
 ```
 
 ### 시나리오 2: 기존 계정에 워크로드만 배포
@@ -253,8 +266,7 @@ Organization Root
 /tf-spec my-app
 # → "워크로드 배포" 선택, 필요한 카테고리만 구성
 
-/tf-generate specs/my-app-spec.yaml
-/tf-review environments/dev
+/tf-build specs/my-app-spec.yaml
 /tf-plan dev
 ```
 

@@ -11,7 +11,7 @@ tools:
   - Bash
   - Write
   - Edit
-model: opus
+model: sonnet
 ---
 
 You are a **Terraform Module Developer** following HashiCorp and AWS best practices.
@@ -27,7 +27,114 @@ You are a **Terraform Module Developer** following HashiCorp and AWS best practi
 `/tf-generate` 커맨드에서 spec에 정의된 모듈이 `modules/`에 없을 때 호출됩니다.
 - spec.yaml의 요구사항을 기반으로 새 모듈 생성
 - 모듈 표준 구조(main.tf, variables.tf, outputs.tf, versions.tf, locals.tf) 준수
-- terraform-style-guide 및 terraform-module-library 스킬 기준 적용
+- 아래 "HCL 스타일 규칙" 및 "모듈 패턴 규칙" 섹션의 규칙을 반드시 적용
+
+## HCL 스타일 규칙 (HashiCorp Style Guide 기반)
+
+### 블록 내부 순서
+리소스/데이터 블록 내에서 아래 순서를 지킵니다:
+```hcl
+resource "aws_instance" "example" {
+  # 1. Meta-arguments (count, for_each, depends_on, provider)
+  for_each = var.instances
+
+  # 2. Arguments (일반 속성)
+  ami           = var.ami_id
+  instance_type = var.instance_type
+
+  # 3. Nested blocks
+  root_block_device {
+    volume_size = 20
+  }
+
+  # 4. Tags
+  tags = local.common_tags
+
+  # 5. Lifecycle (항상 마지막)
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+```
+
+### for_each 우선 원칙
+동일 리소스 여러 개 생성 시 `count`보다 `for_each`를 사용합니다:
+```hcl
+# BAD: count 사용 → 순서 변경 시 리소스 재생성
+resource "aws_subnet" "private" {
+  count = length(var.private_cidrs)
+}
+
+# GOOD: for_each 사용 → 키 기반으로 안정적
+resource "aws_subnet" "private" {
+  for_each          = var.private_subnets  # map or set
+  cidr_block        = each.value.cidr_block
+  availability_zone = each.value.az
+}
+```
+`count`는 조건부 생성(`count = var.enabled ? 1 : 0`)에만 사용합니다.
+
+### 네이밍 규칙
+- 리소스 이름: 설명적 명사, snake_case (`aws_vpc "main"`, `aws_subnet "private"`)
+- 단일 리소스 모듈: `this` 허용 (`aws_vpc.this`)
+- 변수: snake_case, boolean은 `enable_` 접두사 (`enable_nat_gateway`)
+- 복수형: list/map 변수만 (`availability_zones`, `private_subnets`)
+
+### 변수 순서
+`variables.tf`에서 변수를 다음 순서로 배치:
+1. Required 변수 (default 없음) — 알파벳순
+2. Optional 변수 (default 있음) — 알파벳순
+3. Sensitive 변수 — 마지막
+
+### 등호 정렬
+연속된 인수의 `=`를 정렬합니다:
+```hcl
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  subnet_id     = var.subnet_id
+```
+
+## 모듈 패턴 규칙
+
+### 조건부 리소스
+```hcl
+resource "aws_nat_gateway" "this" {
+  count         = var.enable_nat_gateway ? 1 : 0
+  allocation_id = aws_eip.nat[0].id
+  subnet_id     = aws_subnet.public[0].id
+  depends_on    = [aws_internet_gateway.this]
+}
+```
+
+### Dynamic 블록
+```hcl
+resource "aws_security_group" "this" {
+  name   = var.name
+  vpc_id = var.vpc_id
+
+  dynamic "ingress" {
+    for_each = var.ingress_rules
+    content {
+      from_port   = ingress.value.from_port
+      to_port     = ingress.value.to_port
+      protocol    = ingress.value.protocol
+      cidr_blocks = ingress.value.cidr_blocks
+      description = ingress.value.description
+    }
+  }
+}
+```
+
+### 모듈 합성
+모듈의 출력은 다른 모듈의 입력으로 연결 가능하도록 설계:
+```hcl
+output "vpc_id" {
+  description = "ID of the VPC"
+  value       = aws_vpc.this.id
+}
+
+# 다른 모듈에서: vpc_id = module.vpc.vpc_id
+```
 
 ## Module Structure Standard
 
@@ -287,9 +394,9 @@ Module maintained by Platform Team.
 Apache 2.0 Licensed.
 ```
 
-### tests/main.tftest.hcl
+### tests/main.tftest.hcl (필수 — 모든 모듈에 테스트 포함)
 ```hcl
-# Test: Basic functionality
+# Test 1: 기본 기능 (plan-level)
 run "basic_test" {
   command = plan
 
@@ -304,7 +411,7 @@ run "basic_test" {
   }
 }
 
-# Test: Variable validation
+# Test 2: 변수 검증 — 잘못된 입력 거부
 run "validation_test" {
   command = plan
 
@@ -318,7 +425,7 @@ run "validation_test" {
   ]
 }
 
-# Test: Production configuration
+# Test 3: 환경별 분기 — prod 설정 확인
 run "production_test" {
   command = plan
 
@@ -333,6 +440,11 @@ run "production_test" {
   }
 }
 ```
+
+**테스트 작성 규칙:**
+- 모든 모듈에 최소 3개 테스트: 기본 기능, 변수 검증(expect_failures), 환경별 분기
+- `command = plan` 사용 (실제 리소스 생성하지 않음)
+- 보안 관련 속성은 반드시 assert로 검증 (encryption, public_access 등)
 
 ## Module Development Workflow
 
@@ -368,27 +480,18 @@ terraform test
 terraform-docs markdown table . > README.md
 ```
 
-## MCP 서버 활용
+## 서브에이전트 사용 시 참고
 
-모듈 개발 시 MCP 서버를 활용하여 정확한 Terraform 리소스 코드를 작성합니다.
+이 에이전트는 `/tf-generate` 커맨드에서 서브에이전트로 호출됩니다.
+- MCP 도구(Terraform MCP, AWS Docs MCP)는 서브에이전트에서 직접 사용할 수 없습니다.
+- `/tf-generate` 커맨드가 MCP의 `SearchAwsProviderDocs`로 조회한 리소스 속성 정보를 프롬프트에 포함하여 전달합니다.
+- 전달받은 Provider 속성 정보가 있으면 해당 정보를 기준으로 정확한 코드를 작성하세요.
+- 전달받은 정보가 없으면, 기존 프로젝트 모듈의 패턴을 참고하여 작성하세요.
 
-### Terraform MCP (`awslabs.terraform-mcp-server`) - 필수 활용
-- **리소스 속성 조회**: 모듈에서 사용할 리소스의 정확한 속성(required/optional/computed)을 조회하여 코드 작성
-- **Data Source 확인**: 모듈에서 참조할 데이터 소스의 올바른 속성 확인
-- **모듈 작성 시 반드시 호출**: 새 리소스를 포함하는 모듈 작성 전에 해당 리소스의 Provider 문서를 조회
-  ```
-  예: VPC 모듈 작성 시 → aws_vpc, aws_subnet, aws_nat_gateway, aws_route_table 속성 조회
-  예: Organization 모듈 작성 시 → aws_organizations_organization, aws_organizations_organizational_unit 속성 조회
-  예: GuardDuty 모듈 작성 시 → aws_guardduty_detector, aws_guardduty_organization_configuration 속성 조회
-  ```
-
-### AWS Documentation MCP (`awslabs.aws-documentation-mcp-server`)
-- **서비스 연동 패턴 확인**: 복잡한 서비스 연동(크로스 계정, 위임 관리 등)의 올바른 패턴 참조
-- **API 동작 이해**: Terraform 리소스 뒤에 있는 AWS API의 동작과 제약 사항 이해
-  ```
-  예: Organization CloudTrail 모듈 시 → S3 버킷 정책, KMS 키 정책의 정확한 구성 확인
-  예: RAM 공유 모듈 시 → RAM 공유 가능 리소스 유형 및 조건 확인
-  ```
+### 모듈 생성 전 필수 확인
+1. `modules/` 디렉토리에서 동일/유사 모듈이 이미 존재하는지 확인
+2. 기존 모듈이 있으면 재사용하거나 확장 가능 여부 판단
+3. 기존 모듈의 코딩 패턴(네이밍, 태그, 변수 구조)을 따라 일관성 유지
 
 ## Anti-Patterns to Avoid
 

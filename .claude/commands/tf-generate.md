@@ -164,13 +164,31 @@ spec 값 기반 변수 파일.
 
 ### Phase 5: 코드 품질 검증
 
+#### Step 1: 포맷팅 및 문법 검증
 ```bash
 cd environments/{env}
 terraform fmt -recursive
 terraform validate
 ```
 
-terraform-style-guide 스킬 규칙 적용.
+#### Step 2: 스타일 규칙 검증
+생성된 코드에 아래 규칙이 적용되었는지 확인합니다:
+- [ ] 리소스 블록 내부 순서: meta-args → args → blocks → tags → lifecycle
+- [ ] 복수 리소스 생성에 `for_each` 사용 (`count`는 조건부 생성에만)
+- [ ] 변수에 `description`, `type` 존재, 주요 변수에 `validation` 블록
+- [ ] 등호(`=`) 정렬 (연속된 인수)
+- [ ] `sensitive = true` 적용 (패스워드, 키 등)
+- [ ] Provider `default_tags` 블록 사용
+
+위반 항목이 있으면 생성 단계에서 직접 수정합니다.
+
+#### Step 3: 모듈 테스트 파일 확인
+생성된 각 모듈에 `tests/main.tftest.hcl` 파일이 존재하는지 확인합니다.
+없으면 tf-module-developer가 누락한 것이므로 기본 테스트를 추가합니다:
+```bash
+# 각 모듈 디렉토리에 tests/ 확인
+ls modules/*/tests/main.tftest.hcl 2>/dev/null
+```
 
 ### Phase 6: 요약 출력
 
@@ -204,6 +222,9 @@ terraform-style-guide 스킬 규칙 적용.
 1. terraform.tfvars 값 확인
 2. /tf-review environments/{env} 코드 검토
 3. /tf-plan {env} Plan 확인
+
+> **참고**: `/tf-build`를 사용했다면 리뷰가 이미 포함되어 있으므로
+> terraform.tfvars 확인 후 바로 `/tf-plan`을 진행하세요.
 ```
 
 ---
@@ -407,10 +428,21 @@ encrypt        = true
 
 ### Phase 5-org: 코드 품질 검증
 
+#### Step 1: 포맷팅 및 문법 검증
 ```bash
 cd environments/org-foundation/01-organization && terraform fmt -recursive && terraform validate
 cd environments/org-foundation/02-security-baseline && terraform fmt -recursive && terraform validate
 cd environments/org-foundation/03-shared-networking && terraform fmt -recursive && terraform validate
+```
+
+#### Step 2: 스타일 규칙 검증 (워크로드 Phase 5 Step 2와 동일 체크리스트 적용)
+
+#### Step 3: 모듈 테스트 파일 확인
+org-foundation용 모듈에도 `tests/main.tftest.hcl` 존재 여부 확인:
+```bash
+ls modules/organization/*/tests/main.tftest.hcl 2>/dev/null
+ls modules/security/*/tests/main.tftest.hcl 2>/dev/null
+ls modules/networking/*/tests/main.tftest.hcl 2>/dev/null
 ```
 
 ### Phase 6-org: 요약 출력
@@ -467,44 +499,64 @@ cd environments/org-foundation/03-shared-networking && terraform fmt -recursive 
 1. 각 단계의 terraform.tfvars 값 확인
 2. /tf-review environments/org-foundation 코드 검토
 3. /tf-plan management 순서대로 Plan 확인
+
+> **참고**: `/tf-build`를 사용했다면 리뷰가 이미 포함되어 있으므로
+> terraform.tfvars 확인 후 바로 `/tf-plan`을 진행하세요.
 ```
 
 ---
 
 ## MCP 서버 활용
 
-코드 생성 과정에서 MCP 서버를 활용하여 정확한 Terraform 코드를 생성합니다.
+이 커맨드는 메인 세션에서 실행되므로 MCP 도구를 직접 사용할 수 있습니다.
+**중요**: tf-module-developer 서브에이전트는 MCP 도구에 접근할 수 없습니다. 따라서 모듈 생성을 위임하기 전에 메인 세션에서 MCP로 필요한 정보를 조회하고, 그 결과를 서브에이전트 프롬프트에 포함하세요.
 
-### Terraform MCP (`awslabs.terraform-mcp-server`)
-- **리소스 속성 조회**: 모듈 생성 시 Terraform AWS Provider의 최신 리소스/데이터 소스 속성을 조회하여 정확한 코드 생성
-- **필수/선택 속성 확인**: 리소스별 required/optional 속성을 확인하여 누락 방지
-- **활용 시점**:
-  - Phase 3/3-org(모듈 확인 및 생성): tf-module-developer 에이전트가 새 모듈을 만들 때 리소스 속성 참조
-  - Phase 4/4-org(환경 파일 생성): Provider 설정, 리소스 블록의 정확한 속성 확인
-  ```
-  예: VPC 모듈 생성 시 → aws_vpc, aws_subnet 등의 최신 속성 조회
-  예: Organizations 모듈 생성 시 → aws_organizations_organization, aws_organizations_policy 속성 확인
-  예: GuardDuty org 모듈 시 → aws_guardduty_organization_configuration 속성 확인
-  ```
+### Terraform MCP - 모듈 생성 전 리소스 속성 조회 (필수)
+새 모듈을 생성할 때 반드시 `SearchAwsProviderDocs`로 리소스 속성을 조회합니다:
+```
+1. 모듈에 포함될 핵심 리소스 목록 파악 (spec 기반)
+2. 각 리소스에 대해 SearchAwsProviderDocs 호출
+   예: VPC 모듈 → SearchAwsProviderDocs("aws_vpc"), SearchAwsProviderDocs("aws_subnet")
+   예: Organizations 모듈 → SearchAwsProviderDocs("aws_organizations_organization")
+3. 조회된 속성 정보를 tf-module-developer 서브에이전트 프롬프트에 포함
+```
 
-### AWS Documentation MCP (`awslabs.aws-documentation-mcp-server`)
-- **서비스 연동 패턴 확인**: 크로스 계정 접근, 위임 관리자 설정, RAM 공유 등 복잡한 패턴의 올바른 구성 확인
-- **API 제한/할당량 참조**: 리소스 생성 시 알아야 할 제한 사항 (SCP 최대 크기, OU 중첩 깊이 등)
-- **활용 시점**:
-  - Phase 3-org(모듈 생성): org-foundation 모듈의 AWS API 호출 패턴 확인
-  - Phase 4-org(환경 파일 생성): 단계 간 의존성의 올바른 구현 방법 확인
-  ```
-  예: Delegated Administrator 설정 시 → 지원 서비스 목록 및 설정 순서 확인
-  예: Organization CloudTrail 시 → S3 버킷 정책, KMS 키 정책 요구사항 확인
-  ```
+### AWS Documentation MCP - 복잡한 패턴 확인
+크로스 계정, 위임 관리자 등 복잡한 패턴은 `search_documentation`으로 확인합니다:
+```
+예: Delegated Administrator → search_documentation("delegated administrator setup")
+예: Organization CloudTrail → search_documentation("organization trail s3 bucket policy")
+```
+
+### tf-module-developer 호출 시 프롬프트 구성
+```
+Task(subagent_type="tf-module-developer", prompt="""
+{spec에서 추출한 모듈 요구사항}
+
+## MCP에서 조회한 리소스 속성 (참고)
+{SearchAwsProviderDocs 결과 요약}
+
+## 기존 모듈 패턴 참고
+{기존 modules/ 디렉토리의 패턴}
+""")
+```
 
 ## Code Generation Rules
 
 1. **CLAUDE.md 코딩 표준 준수**: 파일 구조, 네이밍 규칙, 필수 태그
-2. **terraform-style-guide 스킬 적용**: HashiCorp 공식 스타일
-3. **terraform-module-library 스킬 참조**: 모듈 구조 패턴
-4. **terraform-engineer 스킬 참조**: State 관리, Provider 설정 패턴
+2. **HCL 스타일 규칙 적용** (tf-module-developer에 내장된 HashiCorp Style Guide 기반 규칙):
+   - 블록 내부 순서: meta-args → args → blocks → tags → lifecycle
+   - `for_each` 우선 (`count`는 조건부에만)
+   - 변수 순서: required → optional → sensitive (각각 알파벳순)
+   - 등호 정렬, snake_case 네이밍
+3. **모듈 패턴 적용** (tf-module-developer에 내장된 패턴):
+   - 단일 책임 모듈, 조건부 리소스, dynamic 블록, 모듈 합성 출력 설계
+   - 모든 모듈에 `tests/main.tftest.hcl` 포함 (최소 3개 테스트)
+4. **State 관리 패턴**:
+   - Partial backend config (`backend.hcl`) 사용
+   - 환경별/단계별 state 파일 분리
+   - org-foundation 단계 간 의존성: remote state 또는 SSM parameter로 참조
 5. **보안 가이드라인 적용**: 시크릿 금지, 최소 권한, 암호화 기본 활성화
 6. **모든 변수에 description + type + validation**
-7. **모든 리소스에 태그 적용**
-8. **org-foundation 단계 간 의존성**: remote state 또는 SSM parameter로 참조
+7. **모든 리소스에 태그 적용** (provider `default_tags` + 리소스별 `tags`)
+8. **Provider 설정**: `default_tags` 블록으로 공통 태그 적용, 멀티 어카운트는 `assume_role` 사용

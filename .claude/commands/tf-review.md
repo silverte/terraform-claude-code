@@ -3,8 +3,11 @@
 보안, 비용, 모범 사례에 대한 종합적인 Terraform 코드 리뷰를 수행합니다.
 
 ## Workflow Position
-이 커맨드는 `/tf-spec` → `/tf-generate` → **`/tf-review`** → `/tf-plan` 워크플로우에서 코드 품질 검증 단계입니다.
+이 커맨드는 개별 워크플로우(`/tf-spec` → `/tf-generate` → **`/tf-review`** → `/tf-plan`)에서 코드 품질 검증 단계입니다.
 `/tf-generate`로 코드가 생성된 후, `/tf-plan` 전에 실행하세요.
+
+> **참고**: `/tf-build`를 사용하면 코드 생성과 리뷰가 통합 실행됩니다.
+> 이 커맨드는 기존 코드를 독립적으로 리뷰할 때 사용합니다.
 
 ## Usage
 ```
@@ -23,34 +26,38 @@
 
 ## MCP 서버 활용
 
-리뷰 과정에서 MCP 서버를 활용하여 최신 보안 기준과 베스트 프랙티스를 적용합니다.
+이 커맨드는 메인 세션에서 실행되므로 MCP 도구를 직접 사용할 수 있습니다.
+**중요**: tf-security-reviewer, tf-cost-analyzer 서브에이전트는 MCP 도구에 접근할 수 없습니다. 메인 세션에서 MCP로 수집한 정보를 서브에이전트 프롬프트에 포함하여 전달하세요.
 
-### Well-Architected Security MCP (`awslabs.well-architected-security-mcp-server`)
-- **Security Pillar 평가**: 리뷰 대상 코드가 Well-Architected Security Pillar의 베스트 프랙티스를 준수하는지 자동 평가
-- **활용 시점**: Phase 1(Security Review) 시작 시 호출하여 평가 기준으로 사용
-  ```
-  예: IAM 정책 리뷰 시 → SEC01(보안 기반) 기준 평가
-  예: 데이터 보호 리뷰 시 → SEC08(저장 중 데이터 보호), SEC09(전송 중 데이터 보호) 평가
-  예: 인시던트 대응 리뷰 시 → SEC10(인시던트 대응) 기준 확인
-  ```
+### 리뷰 시작 전 MCP 수집 (Phase 1 이전)
+```
+1. RunCheckovScan(working_directory="{path}") → Checkov 보안 스캔 결과 수집
+2. 주요 리소스 타입 식별 후 SearchAwsProviderDocs 호출 → deprecated 속성 확인
+   예: S3 모듈 → SearchAwsProviderDocs("aws_s3_bucket") → ACL deprecated 여부
+   예: EC2 모듈 → SearchAwsProviderDocs("aws_instance") → metadata_options 권장값
+```
 
-### AWS Documentation MCP (`awslabs.aws-documentation-mcp-server`)
-- **최신 보안 권장 사항 조회**: IAM 정책 베스트 프랙티스, SCP 가이드라인, 암호화 요구사항 등
-- **서비스별 보안 설정 확인**: 리소스별 권장 보안 구성 참조
-- **활용 시점**: Phase 1(Security Review) 및 Phase 4(Best Practices) 시
-  ```
-  예: S3 버킷 보안 리뷰 시 → S3 보안 베스트 프랙티스 문서 참조
-  예: EKS 보안 리뷰 시 → EKS 보안 가이드 참조
-  ```
+### 서브에이전트 호출 시 MCP 결과 전달
+```
+Task(subagent_type="tf-security-reviewer", prompt="""
+{path}의 Terraform 코드를 보안 리뷰해주세요.
 
-### Terraform MCP (`awslabs.terraform-mcp-server`)
-- **deprecated 속성 확인**: 사용 중인 리소스 속성이 deprecated되지 않았는지 검증
-- **최신 권장 설정 확인**: 리소스별 최신 보안 관련 속성 확인
-- **활용 시점**: Phase 3(Code Quality) 시
-  ```
-  예: aws_s3_bucket 리뷰 시 → bucket ACL deprecated 여부 확인
-  예: aws_instance 리뷰 시 → metadata_options의 최신 권장 값 확인
-  ```
+## Checkov 스캔 결과 (MCP RunCheckovScan)
+{RunCheckovScan 결과}
+
+## Provider 속성 정보 (MCP SearchAwsProviderDocs)
+{deprecated/보안 관련 속성 정보}
+
+위 결과를 참고하여 종합 보안 리뷰를 수행하세요.
+""")
+```
+
+### Phase 6 수정 시 MCP 활용
+자동 수정 코드 생성 시 `SearchAwsProviderDocs`로 올바른 속성을 확인한 후 수정합니다:
+```
+예: S3 public access block 추가 시 → SearchAwsProviderDocs("aws_s3_bucket_public_access_block")
+예: EBS 암호화 설정 시 → SearchAwsProviderDocs("aws_ebs_encryption_by_default")
+```
 
 ## Review Process
 
@@ -96,51 +103,72 @@
 - 스토리지 티어링
 
 ### Phase 3: Code Quality
-**자동화된 도구 실행 + Terraform MCP로 deprecated 속성 검증**
+**자동화된 도구 실행 + Terraform MCP로 보안 스캔 및 deprecated 속성 검증**
 
+#### Step 1: MCP 보안 스캔 (우선 사용)
+Terraform MCP의 `RunCheckovScan` 도구로 보안/정책 스캔을 실행합니다:
+```
+RunCheckovScan(working_directory="{path}")
+```
+MCP 스캔이 실패하거나 결과가 불충분한 경우에만 로컬 도구를 사용합니다.
+
+#### Step 2: 기본 검증 (항상 실행)
 ```bash
 # 포맷팅 검사
 terraform fmt -check -recursive $PATH
 
 # 문법 검증
-terraform validate
-
-# 린팅
-tflint --recursive $PATH
-
-# 보안 스캔
-tfsec $PATH --minimum-severity MEDIUM
-
-# 정책 검사
-checkov -d $PATH --framework terraform
+cd $PATH && terraform validate
 ```
+
+#### Step 3: 로컬 도구 (설치된 경우에만)
+각 도구의 설치 여부를 확인한 후 실행합니다:
+```bash
+# tflint 설치 확인 후 실행
+which tflint && tflint --recursive $PATH
+
+# tfsec 설치 확인 후 실행 (MCP RunCheckovScan이 이미 커버하므로 보충용)
+which tfsec && tfsec $PATH --minimum-severity MEDIUM
+```
+설치되지 않은 도구는 건너뛰고 MCP 스캔 결과로 대체합니다.
 
 ### Phase 4: Best Practices
 **수동 검토 항목**
 
 #### 모듈 구조
-- [ ] 표준 파일 구조 준수
+- [ ] 표준 파일 구조 준수 (main.tf, variables.tf, outputs.tf, versions.tf, locals.tf)
 - [ ] 적절한 추상화 수준
 - [ ] 재사용 가능성
+- [ ] 테스트 파일 존재 (`tests/main.tftest.hcl`)
+
+#### HCL 스타일 (HashiCorp Style Guide 기반)
+- [ ] 블록 내부 순서: meta-args → args → blocks → tags → lifecycle
+- [ ] `for_each` 사용 (복수 리소스), `count`는 조건부 생성에만 사용
+- [ ] 등호(`=`) 정렬 (연속된 인수)
+- [ ] 리소스 이름: 설명적 명사, snake_case (리소스 타입 중복 금지)
+- [ ] Provider `default_tags` 블록 사용
 
 #### 변수 정의
-- [ ] 모든 변수에 description
-- [ ] 적절한 type 지정
-- [ ] validation 블록 사용
-- [ ] sensitive 플래그
+- [ ] 모든 변수에 description + type
+- [ ] 주요 변수에 validation 블록
+- [ ] sensitive 플래그 적용 (패스워드, 키)
+- [ ] 변수 순서: required → optional → sensitive (각각 알파벳순)
+- [ ] boolean 변수에 `enable_` 접두사
 
 #### 출력 정의
-- [ ] 필요한 출력 제공
+- [ ] 필요한 출력 제공 (id, arn 등 주요 속성)
 - [ ] 설명적인 description
+- [ ] 모듈 합성 가능하도록 핵심 속성 출력
 
 #### 문서화
 - [ ] README.md 존재
-- [ ] 사용 예제 제공
+- [ ] 사용 예제 제공 (examples/basic, examples/complete)
 - [ ] CHANGELOG.md 관리
 
 #### 태깅
-- [ ] 필수 태그 적용
+- [ ] 필수 태그 적용 (Project, Environment, ManagedBy, Owner, CostCenter)
 - [ ] 일관된 태깅 전략
+- [ ] Provider `default_tags`와 리소스별 `tags` 조합
 
 ### Phase 5: Documentation Review
 
@@ -292,6 +320,8 @@ checkov -d $PATH --framework terraform
 ---
 
 ## Phase 6: 자동 수정 (Auto-Fix)
+
+**중요**: Phase 1-5의 분석은 서브에이전트(tf-security-reviewer, tf-cost-analyzer)에 위임하지만, Phase 6의 코드 수정은 **메인 세션에서 직접 수행**합니다. 서브에이전트는 read-only(Write/Edit 금지)이므로 코드를 수정할 수 없습니다.
 
 리뷰 리포트 출력 후, Critical/High 이슈가 있으면 자동 수정 프로세스를 실행합니다.
 

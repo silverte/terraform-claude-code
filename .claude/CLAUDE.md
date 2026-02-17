@@ -8,7 +8,17 @@
 
 ## 핵심 워크플로우
 
-### 워크로드 배포 (VPC, EC2, ECS, RDS 등)
+### 권장 워크플로우 (3단계 - /tf-build 사용)
+```
+/tf-spec <name>       → 대화형 요구사항 수집 → specs/{name}-spec.yaml
+                              ↓
+/tf-build <spec>      → 코드 생성 + 품질 검증 통합 → environments/{env}/ + modules/
+                         (MCP 1회 수집 → 모듈 병렬 생성 → 자동 수정 → 보안/비용 병렬 리뷰)
+                              ↓
+/tf-plan <env>        → terraform plan 실행 및 검증
+```
+
+### 개별 실행 워크플로우 (4단계 - 필요 시)
 ```
 /tf-spec <name>       → 대화형 요구사항 수집 → specs/{name}-spec.yaml
                               ↓
@@ -23,12 +33,10 @@
 ```
 /tf-spec <name>       → "조직 기반 설정" 선택 → specs/{name}-spec.yaml
                               ↓
-/tf-generate <spec>   → 3단계 코드 생성:
+/tf-build <spec>      → 3단계 코드 생성 + 품질 검증:
                          → environments/org-foundation/01-organization/
                          → environments/org-foundation/02-security-baseline/
                          → environments/org-foundation/03-shared-networking/
-                              ↓
-/tf-review <path>     → 보안/비용/품질 종합 검토
                               ↓
 /tf-plan management   → 순서대로 Plan 확인
 ```
@@ -38,16 +46,20 @@
 # === 조직 기반 설정 (먼저 실행) ===
 /tf-spec my-org
 # → "조직 기반 설정" 선택 → Organizations, OU, SCP, 보안 서비스 구성
-/tf-generate specs/my-org-spec.yaml
-/tf-review environments/org-foundation
+/tf-build specs/my-org-spec.yaml
 /tf-plan management
 
 # === 워크로드 배포 (org-foundation 이후) ===
 /tf-spec my-web-service
 # → "워크로드 배포" 선택 → VPC, ECS, RDS 등 구성
-/tf-generate specs/my-web-service-spec.yaml
-/tf-review environments/dev
+/tf-build specs/my-web-service-spec.yaml
 /tf-plan dev
+
+# === 개별 실행이 필요한 경우 ===
+# 코드만 생성 (리뷰 없이)
+/tf-generate specs/my-web-service-spec.yaml
+# 기존 코드 리뷰 (생성 없이)
+/tf-review environments/dev
 ```
 
 ## 프로젝트 구조
@@ -64,9 +76,10 @@
 │   │   └── tf-module-developer.md   # 모듈 개발
 │   └── commands/                    # 슬래시 커맨드
 │       ├── tf-spec.md               # 대화형 요구사항 수집
+│       ├── tf-build.md              # 코드 생성 + 품질 검증 통합 (권장)
 │       ├── tf-generate.md           # 코드 생성
-│       ├── tf-plan.md               # Plan 실행
-│       └── tf-review.md             # 종합 리뷰
+│       ├── tf-review.md             # 종합 리뷰
+│       └── tf-plan.md               # Plan 실행
 ├── templates/                        # YAML 요구사항 템플릿
 │   ├── _base.yaml                   # 공통 (프로젝트, 환경, 태그)
 │   ├── organization.yaml            # Organizations, OU, SCP, 중앙 보안, 공유 네트워크
@@ -77,7 +90,7 @@
 │   ├── security.yaml                # IAM, SCP, WAF, GuardDuty, Security Hub, KMS
 │   └── monitoring.yaml              # CloudWatch, CloudTrail, Config, SNS
 ├── specs/                            # 생성된 요구사항 명세서
-├── modules/                          # Terraform 모듈
+├── modules/                          # Terraform 모듈 (코드 생성 시 자동 생성)
 │   ├── organization/                # 조직 레벨 모듈
 │   ├── networking/                  # 네트워크 모듈
 │   ├── compute/                     # 컴퓨팅 모듈
@@ -85,7 +98,7 @@
 │   ├── storage/                     # 스토리지 모듈
 │   ├── security/                    # 보안 모듈
 │   └── monitoring/                  # 모니터링 모듈
-├── environments/                     # 환경별 배포 설정
+├── environments/                     # 환경별 배포 설정 (코드 생성 시 자동 생성)
 │   ├── org-foundation/              # 조직 기반 (3단계)
 │   │   ├── 01-organization/         # Organizations, OU, SCP
 │   │   ├── 02-security-baseline/    # CloudTrail, GuardDuty, SecurityHub
@@ -258,8 +271,9 @@ s3://{bucket}/
 | 커맨드 | 용도 | 사용 시점 |
 |--------|------|-----------|
 | `/tf-spec` | 대화형 요구사항 수집 | 새 인프라 요청 시 |
-| `/tf-generate` | 명세서 → 코드 생성 | spec 확정 후 |
-| `/tf-review` | 종합 코드 리뷰 + 자동 수정 | 코드 생성 후 (Critical/High 이슈 자동 수정 제안) |
+| `/tf-build` | 코드 생성 + 품질 검증 통합 (권장) | spec 확정 후 (generate + review 한번에) |
+| `/tf-generate` | 명세서 → 코드 생성만 | 코드만 생성하고 싶을 때 |
+| `/tf-review` | 종합 코드 리뷰 + 자동 수정 | 기존 코드를 리뷰할 때 |
 | `/tf-plan` | Plan 실행 | 리뷰 통과 후 |
 
 ## Subagent 활용 가이드
@@ -267,17 +281,24 @@ s3://{bucket}/
 | Subagent | 용도 | 연동 |
 |----------|------|------|
 | tf-architect | 인프라 설계 | `/tf-spec`에서 복잡한 설계 판단 시 |
-| tf-security-reviewer | 보안 검토 | `/tf-review`에서 보안 검사 시 |
-| tf-cost-analyzer | 비용 분석 | `/tf-review`에서 비용 분석 시 |
-| tf-module-developer | 모듈 개발 | `/tf-generate`에서 모듈 생성 시 |
+| tf-security-reviewer | 보안 검토 | `/tf-build` Phase 5, `/tf-review` Phase 1 |
+| tf-cost-analyzer | 비용 분석 | `/tf-build` Phase 5, `/tf-review` Phase 2 |
+| tf-module-developer | 모듈 개발 | `/tf-build` Phase 3, `/tf-generate` Phase 3 |
 
 ## 설치된 스킬 활용
 
-| 스킬 | 용도 | 활용 시점 |
-|------|------|-----------|
-| terraform-style-guide | HashiCorp 공식 스타일 적용 | 코드 생성/리뷰 시 |
-| terraform-module-library | 모듈 구조 패턴 | 모듈 생성 시 |
-| terraform-engineer | State/Provider 관리 | 전반적인 코드 생성 시 |
+### 스킬 통합 아키텍처
+
+스킬은 메인 세션에서 `/skill-name`으로 호출할 수 있지만, **서브에이전트(tf-module-developer 등)에서는 스킬 파일에 직접 접근 불가**합니다. 따라서 스킬의 핵심 규칙은 에이전트 파일에 직접 내장하여 서브에이전트가 항상 참조 가능하도록 구성했습니다.
+
+| 스킬 | 핵심 규칙 내장 위치 | 메인 세션 활용 |
+|------|---------------------|----------------|
+| terraform-style-guide | tf-module-developer (HCL 스타일 규칙 섹션) | `/tf-review` Phase 4 체크리스트 |
+| terraform-module-library | tf-module-developer (모듈 패턴 규칙 섹션) | `/tf-generate` Phase 3 모듈 구조 |
+| terraform-engineer | tf-module-developer (테스트 규칙) | `/tf-generate` Phase 5 테스트 검증 |
+
+### 파일명 규칙
+프로젝트는 Terraform 버전/프로바이더 설정 파일로 **`versions.tf`**를 사용합니다 (HashiCorp Style Guide의 `terraform.tf`와 다름). 이는 프로젝트 전체에 일관되게 적용된 의도적 선택이므로 변경하지 마세요.
 
 ## AWS MCP 서버 설정
 
@@ -292,45 +313,13 @@ uvx --version
 
 ### 구성된 MCP 서버
 
-| 서버 | 용도 | 활용 사례 |
-|------|------|-----------|
-| `awslabs.core-mcp-server` | AWS MCP 서버 조율 | 복잡한 워크플로우 계획 |
-| `awslabs.terraform-mcp-server` | Terraform AWS Provider 문서 검색 | 리소스 속성, Data Source 조회 |
-| `awslabs.aws-documentation-mcp-server` | AWS 공식 문서 검색 | 서비스 제한, API 레퍼런스, 베스트 프랙티스 |
-| `awslabs.well-architected-security-mcp-server` | Well-Architected Security Pillar 평가 | 보안 표준 체크리스트, 보안 상태 분석 |
+| 서버 | 용도 |
+|------|------|
+| `awslabs.terraform-mcp-server` | Terraform AWS Provider 문서 검색, 리소스 속성 조회 |
+| `awslabs.aws-documentation-mcp-server` | AWS 공식 문서 검색, 서비스 제한/베스트 프랙티스 |
+| `awslabs.well-architected-security-mcp-server` | Well-Architected Security Pillar 기반 보안 평가 |
 
-### 워크플로우별 MCP 활용
-
-| 워크플로우 | MCP 서버 | 활용 시점 |
-|------------|----------|-----------|
-| `/tf-spec` | Terraform MCP | 리소스 속성 검증 (EKS 버전, RDS 엔진 등) |
-| `/tf-spec` | AWS Docs MCP | OU 구조, SCP 가이드라인, 서비스 제한 확인 |
-| `/tf-spec` | WA Security MCP | 보안 서비스 권장 구성 참조 |
-| `/tf-generate` | Terraform MCP | 모듈 생성 시 리소스 속성 조회 (필수) |
-| `/tf-generate` | AWS Docs MCP | 크로스 계정 패턴, 위임 관리자 설정 확인 |
-| `/tf-review` | WA Security MCP | Security Pillar 기반 보안 평가 (필수) |
-| `/tf-review` | Terraform MCP | deprecated 속성 검증 |
-| `/tf-review` | AWS Docs MCP | 서비스별 보안 베스트 프랙티스 참조 |
-| `/tf-plan` | Terraform MCP | Plan 오류 시 속성/타입 검증 |
-| `/tf-plan` | AWS Docs MCP | AWS API 오류, 할당량 초과 해결 |
-
-### 에이전트별 MCP 활용
-
-| 에이전트 | 주요 MCP | 활용 |
-|----------|----------|------|
-| tf-architect | AWS Docs + Terraform | 아키텍처 패턴, 서비스 제한, 리소스 의존성 |
-| tf-security-reviewer | WA Security + AWS Docs | Security Pillar 평가, 보안 베스트 프랙티스 |
-| tf-cost-analyzer | AWS Docs | 최신 가격, 할인 옵션, 프리 티어 |
-| tf-module-developer | Terraform (필수) + AWS Docs | 리소스 속성 조회, 서비스 연동 패턴 |
-
-### MCP 서버 직접 테스트
-```bash
-# Terraform MCP 서버 테스트
-uvx awslabs.terraform-mcp-server@latest
-
-# AWS Documentation MCP 서버 테스트
-uvx awslabs.aws-documentation-mcp-server@latest
-```
+> 상세 활용법은 각 커맨드(`tf-build.md`, `tf-generate.md` 등)와 에이전트 파일을 참조하세요.
 
 ## 참고 문서
 - [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
