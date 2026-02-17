@@ -1,56 +1,106 @@
 {
+  "version": "1.0.0",
+  "lastScanned": 1739793600000,
+  "projectRoot": "/Users/born2k/silverte/ai/terraform/terraform-multi-account-claude-code",
   "techStack": {
-    "iac": "Terraform >= 1.7",
-    "provider": "hashicorp/aws ~> 5.0",
-    "orchestration": "Claude Code (slash commands + agents)",
-    "mcp": [
-      "awslabs.terraform-mcp-server",
-      "awslabs.aws-documentation-mcp-server",
-      "awslabs.well-architected-security-mcp-server"
+    "languages": [
+      {
+        "name": "HCL/Terraform",
+        "version": ">= 1.7",
+        "confidence": "high",
+        "markers": ["templates/*.yaml", ".claude/commands/*.md", "modules/", "environments/"]
+      }
     ],
-    "cicd": "GitHub Actions + OIDC",
-    "stateBackend": "S3 + DynamoDB"
+    "frameworks": [
+      {
+        "name": "AWS Provider",
+        "version": "~> 5.0",
+        "category": "iac"
+      }
+    ],
+    "packageManager": null,
+    "runtime": "Terraform >= 1.7"
   },
   "build": {
-    "workflow": "/tf-spec → /tf-build → /tf-plan (3단계 권장)",
-    "alternativeWorkflow": "/tf-spec → /tf-generate → /tf-review → /tf-plan (4단계)",
-    "bootstrapScript": "scripts/bootstrap-backend.sh",
-    "cicdGuide": "docs/ci-cd-guide.md"
+    "buildCommand": "terraform plan",
+    "testCommand": "terraform validate",
+    "lintCommand": "terraform fmt -check -recursive",
+    "devCommand": null,
+    "scripts": {}
   },
   "conventions": {
-    "versionFile": "versions.tf (NOT terraform.tf)",
-    "requiredTags": ["Project", "Environment", "ManagedBy", "Owner", "CostCenter"],
-    "namingPattern": "{project}-{env}-{service}-{resource}",
-    "variableStyle": "snake_case with description + type + validation",
-    "securityRules": "no hardcoded secrets, least privilege IAM, encrypted S3/EBS, VPC Flow Logs",
-    "noTerraformApply": "CI/CD only, never direct apply"
+    "namingStyle": "snake_case",
+    "importStyle": null,
+    "testPattern": "tests/main.tftest.hcl",
+    "fileOrganization": "type-based"
   },
   "structure": {
-    "commands": ".claude/commands/ (5: tf-spec, tf-build, tf-generate, tf-review, tf-plan)",
-    "agents": ".claude/agents/ (4: tf-architect, tf-security-reviewer, tf-cost-analyzer, tf-module-developer)",
-    "references": ".claude/references/ (2: _code-generation-rules.md, _validation-checklist.md)",
-    "templates": "templates/ (8: _base, organization, networking, compute, database, storage, security, monitoring)",
-    "specs": "specs/ (generated YAML specs)",
-    "modules": "modules/ (generated Terraform modules)",
-    "environments": "environments/ (org-foundation/01-03 + dev/staging/prod)"
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": ["templates", "modules", "environments", "specs", "scripts", "docs"],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
   },
-  "notes": [
+  "customNotes": [
     {
-      "date": "2026-02-17",
-      "content": "9개 구조 개선 + 기능 확장 완료 (f256a60). ALB/NLB, Route53, bootstrap, CI/CD 가이드, --only 옵션 추가."
+      "timestamp": 1739793600000,
+      "source": "manual",
+      "category": "architecture",
+      "content": "Claude Code slash commands + agents로 Terraform 코드를 자동 생성하는 프로젝트"
     },
     {
-      "date": "2026-02-17",
-      "content": "일관성 수정 9건 완료 (a611ba1). Terraform 버전, 태그, 파일 간 참조 통일."
+      "timestamp": 1739793600000,
+      "source": "manual",
+      "category": "convention",
+      "content": "versions.tf 사용 (terraform.tf 아님) - 의도적 선택"
     },
     {
-      "date": "2026-02-17",
-      "content": "OMC oh-my-claudecode: 접두사는 Task subagent_type에서 불필요. 기본 에이전트 이름 직접 사용."
+      "timestamp": 1739793600000,
+      "source": "manual",
+      "category": "convention",
+      "content": "필수 태그: Project, Environment, ManagedBy, Owner, CostCenter"
+    },
+    {
+      "timestamp": 1739793600000,
+      "source": "manual",
+      "category": "convention",
+      "content": "tf-module-developer 서브에이전트는 MCP 접근 불가 — 메인 세션에서 조회 후 프롬프트에 포함"
+    },
+    {
+      "timestamp": 1739793600000,
+      "source": "manual",
+      "category": "workflow",
+      "content": "워크플로우: /tf-spec → /tf-build → /tf-plan (3단계 권장)"
+    },
+    {
+      "timestamp": 1739793600000,
+      "source": "manual",
+      "category": "security",
+      "content": "terraform apply 직접 실행 금지 - CI/CD only"
+    },
+    {
+      "timestamp": 1739793600000,
+      "source": "manual",
+      "category": "status",
+      "content": "구조적 개선 + 기능 확장 9개 항목 완료 (f256a60)"
+    },
+    {
+      "timestamp": 1739793600000,
+      "source": "manual",
+      "category": "directive",
+      "content": "실제 AWS 계정 엔드투엔드 테스트 아직 미수행"
     }
   ],
-  "directives": [
-    "실제 AWS 계정 엔드투엔드 테스트 필요 (아직 미수행)",
-    "tf-module-developer 서브에이전트는 MCP 접근 불가 — 메인 세션에서 MCP 조회 후 프롬프트에 포함",
-    "org-foundation은 --only 옵션 미지원 (단계 간 의존성)"
+  "directoryMap": {},
+  "hotPaths": [],
+  "userDirectives": [
+    {
+      "timestamp": 1739793600000,
+      "content": "org-foundation은 --only 옵션 미지원 (단계 간 의존성)",
+      "source": "manual",
+      "confidence": "high"
+    }
   ]
 }
