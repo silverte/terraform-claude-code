@@ -16,13 +16,18 @@ AWS 전문 지식이 없어도 대화를 통해 엔터프라이즈급 멀티 어
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI 설치
 - [uv](https://docs.astral.sh/uv/) 설치 (MCP 서버 실행용)
-- Terraform >= 1.5.0
+- Terraform >= 1.7
 - AWS CLI 설정 완료 (대상 계정 접근 가능)
 
 ```bash
 # uv 설치
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
+
+**선택 도구** (없어도 MCP 기반 스캔으로 대체됩니다):
+- [tfsec](https://github.com/aquasecurity/tfsec) - 보안 스캔
+- [checkov](https://www.checkov.io/) - 정책 검사
+- [infracost](https://www.infracost.io/) - 비용 추정
 
 ## 빠른 시작
 

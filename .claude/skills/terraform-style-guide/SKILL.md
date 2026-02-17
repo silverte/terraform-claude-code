@@ -62,7 +62,7 @@ variable "environment" {
 locals {
   common_tags = {
     Environment = var.environment
-    ManagedBy   = "Terraform"
+    ManagedBy   = "terraform"
   }
 }
 
@@ -299,7 +299,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      ManagedBy = "Terraform"
+      ManagedBy = "terraform"
       Project   = var.project_name
     }
   }

@@ -14,7 +14,7 @@ terraform-aws-vpc/
 │       ├── main.tf
 │       └── variables.tf
 └── tests/
-    └── vpc_test.go
+    └── main.tftest.hcl
 ```
 
 ## Basic Module Pattern
@@ -127,7 +127,7 @@ output "private_subnet_cidrs" {
 **versions.tf**
 ```hcl
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.7"
 
   required_providers {
     aws = {

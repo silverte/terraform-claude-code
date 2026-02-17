@@ -19,7 +19,7 @@ provider "aws" {
   default_tags {
     tags = {
       Environment = var.environment
-      ManagedBy   = "Terraform"
+      ManagedBy   = "terraform"
       Project     = var.project_name
     }
   }
@@ -98,7 +98,7 @@ provider "aws" {
   default_tags {
     tags = {
       Environment = "production"
-      ManagedBy   = "Terraform"
+      ManagedBy   = "terraform"
       CostCenter  = "engineering"
     }
   }
@@ -402,7 +402,7 @@ resource "helm_release" "nginx" {
 
 ```hcl
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.7"
 
   required_providers {
     aws = {

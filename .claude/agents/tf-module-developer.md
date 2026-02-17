@@ -164,7 +164,7 @@ modules/{module-name}/
 ### versions.tf
 ```hcl
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.7"
 
   required_providers {
     aws = {
@@ -362,7 +362,7 @@ module "example" {
 
 | Name | Version |
 |------|---------|
-| terraform | >= 1.5.0 |
+| terraform | >= 1.7 |
 | aws | >= 5.0 |
 
 ## Inputs

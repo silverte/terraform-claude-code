@@ -63,6 +63,8 @@ spec에서 enabled된 각 카테고리에 대해:
 | storage.s3 | modules/storage/s3 |
 | storage.efs | modules/storage/efs |
 | security.account_baseline | modules/security/account-baseline |
+| security.guardduty | modules/security/guardduty |
+| security.security_hub | modules/security/securityhub |
 | security.waf | modules/security/waf |
 | security.kms | modules/security/kms |
 | monitoring.cloudtrail | modules/monitoring/cloudtrail |
@@ -75,7 +77,7 @@ spec에서 enabled된 각 카테고리에 대해:
 #### versions.tf
 ```hcl
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.7"
   required_providers {
     aws = {
       source  = "hashicorp/aws"

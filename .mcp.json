@@ -7,7 +7,7 @@
         "FASTMCP_LOG_LEVEL": "ERROR",
         "solutions-architect": "true"
       },
-      "disabled": false
+      "disabled": true
     },
     "awslabs.terraform-mcp-server": {
       "command": "uvx",

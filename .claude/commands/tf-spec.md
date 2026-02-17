@@ -607,9 +607,9 @@ ssm_exports:
 ```
 명세서가 확정되었습니다: specs/{project-name}-spec.yaml
 
-다음 단계 (택 1):
-  권장: /tf-build specs/{project-name}-spec.yaml    (코드 생성 + 품질 검증 통합)
-  개별: /tf-generate specs/{project-name}-spec.yaml  (코드 생성만)
+다음 단계:
+  /tf-build specs/{project-name}-spec.yaml     ← 코드 생성 + 리뷰를 한번에 (권장)
+  /tf-generate specs/{project-name}-spec.yaml  ← 코드만 생성 (이후 /tf-review로 별도 리뷰)
 ```
 
 ---

@@ -40,7 +40,7 @@ module "vpc_app2" {
 locals {
   common_tags = {
     Environment = var.environment
-    ManagedBy   = "Terraform"
+    ManagedBy   = "terraform"
     Project     = var.project_name
     CostCenter  = var.cost_center
   }
@@ -371,7 +371,7 @@ locals {
   # Required tags for all resources
   required_tags = {
     Environment = var.environment
-    ManagedBy   = "Terraform"
+    ManagedBy   = "terraform"
     Project     = var.project_name
     CostCenter  = var.cost_center
     Owner       = var.owner_email
@@ -549,7 +549,7 @@ output "vpc_id" {
 # Version all modules
 # modules/vpc/versions.tf
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.7"
   required_providers {
     aws = {
       source  = "hashicorp/aws"

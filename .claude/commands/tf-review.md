@@ -52,13 +52,6 @@ Task(subagent_type="tf-security-reviewer", prompt="""
 """)
 ```
 
-### Phase 6 수정 시 MCP 활용
-자동 수정 코드 생성 시 `SearchAwsProviderDocs`로 올바른 속성을 확인한 후 수정합니다:
-```
-예: S3 public access block 추가 시 → SearchAwsProviderDocs("aws_s3_bucket_public_access_block")
-예: EBS 암호화 설정 시 → SearchAwsProviderDocs("aws_ebs_encryption_by_default")
-```
-
 ## Review Process
 
 ### Phase 1: Security Review
@@ -349,6 +342,13 @@ AskUserQuestion으로 수정 범위를 확인합니다.
 - **전체 자동 수정**: 모든 Critical/High 이슈를 자동 수정합니다 (각 수정 전 diff를 보여드립니다)
 - **선택 수정**: 수정할 이슈를 선택합니다
 - **리포트만 확인**: 수정하지 않고 리포트만 확인합니다
+
+### Phase 6 수정 시 MCP 활용
+자동 수정 코드 생성 시 `SearchAwsProviderDocs`로 올바른 속성을 확인한 후 수정합니다:
+```
+예: S3 public access block 추가 시 → SearchAwsProviderDocs("aws_s3_bucket_public_access_block")
+예: EBS 암호화 설정 시 → SearchAwsProviderDocs("aws_ebs_encryption_by_default")
+```
 
 ### Step 3: 수정 코드 생성 및 적용
 
