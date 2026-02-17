@@ -266,6 +266,31 @@ s3://{bucket}/
 | Security Group 0.0.0.0/0 | 예외: ALB/NLB 인바운드만 |
 | 하드코딩된 시크릿 | Secrets Manager/SSM 사용 |
 
+## OMC 오케스트레이션 활용 규칙 (CRITICAL)
+
+이 프로젝트의 `/tf-*` 커맨드는 **Terraform 인프라 코드 전용**입니다. 그 외 일반 개발 작업에는 반드시 OMC 워크플로우를 사용하세요.
+
+### 작업 유형별 도구 선택
+
+| 작업 유형 | 사용할 도구 | 예시 |
+|-----------|-----------|------|
+| 인프라 요구사항 수집 | `/tf-spec` | 새 VPC, ECS 서비스 구성 |
+| Terraform 코드 생성 | `/tf-build`, `/tf-generate` | 명세서 기반 코드 생성 |
+| Terraform 코드 리뷰 | `/tf-review` | 보안/비용/품질 검증 |
+| Terraform Plan | `/tf-plan` | 변경사항 확인 |
+| **멀티 파일 개선/리팩토링** | **OMC autopilot / plan** | 프로젝트 일관성 개선, 문서 업데이트 |
+| **코드 리뷰 (비-Terraform)** | **OMC code-reviewer** | 커맨드/에이전트 파일 리뷰 |
+| **대규모 변경** | **OMC executor (병렬 위임)** | 10개+ 파일 수정 |
+| **변경 검증** | **OMC verifier** | 수정 후 일관성 검증 |
+
+### 필수 규칙
+
+1. **3개 이상 파일 수정** 시 → OMC `plan` 또는 `autopilot` 스킬 사용
+2. **소스 코드 편집** (`.md`, `.yaml`, `.tf` 등) → OMC `executor` 에이전트에 위임
+3. **작업 완료 후** → OMC `verifier` 에이전트로 검증
+4. **프로젝트 학습 사항** → `project_memory_write`로 기록 (다음 세션 활용)
+5. **세션 중 메모** → `notepad_write_working`으로 기록
+
 ## 커맨드 가이드
 
 | 커맨드 | 용도 | 사용 시점 |
