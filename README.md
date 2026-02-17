@@ -29,6 +29,21 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 - [checkov](https://www.checkov.io/) - 정책 검사
 - [infracost](https://www.infracost.io/) - 비용 추정
 
+## State Backend 초기 설정
+
+Terraform State를 저장할 S3 버킷과 DynamoDB 락 테이블을 먼저 생성합니다.
+
+```bash
+# AWS CLI가 올바른 계정을 가리키는지 확인
+aws sts get-caller-identity
+
+# State Backend 생성
+chmod +x scripts/bootstrap-backend.sh
+./scripts/bootstrap-backend.sh my-project
+```
+
+이미 S3 버킷과 DynamoDB 테이블이 있다면 이 단계를 건너뛰세요.
+
 ## 빠른 시작
 
 ### 1. 프로젝트 클론 및 Claude Code 실행
@@ -284,6 +299,17 @@ Organization Root
 # 조직 설정 바로 시작
 /tf-spec my-org --type org-foundation
 ```
+
+## CI/CD 배포
+
+`terraform apply`는 직접 실행하지 않습니다. GitHub Actions 등 CI/CD 파이프라인을 통해 배포합니다.
+
+상세 설정 가이드: [docs/ci-cd-guide.md](docs/ci-cd-guide.md)
+
+- PR 생성 시: `terraform plan` 자동 실행
+- Main 머지 시: `terraform apply` 자동 실행
+- 환경별 승인 프로세스 (dev: 자동, staging: 1명 승인, prod: 2명 승인)
+- OIDC 기반 AWS 인증 (시크릿 키 불필요)
 
 ## 보안 원칙
 

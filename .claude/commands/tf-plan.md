@@ -173,6 +173,7 @@ terraform plan -var-file=terraform.tfvars -out=tfplan
 ### Next Steps
 - Plan 내용 확인 후 CI/CD 파이프라인에서 apply 실행
 - 주의: `terraform apply`는 직접 실행하지 마세요 (CLAUDE.md 금지사항)
+- CI/CD 설정 가이드: `docs/ci-cd-guide.md` 참조
 ```
 
 ### org-foundation Plan 출력
@@ -202,6 +203,7 @@ terraform plan -var-file=terraform.tfvars -out=tfplan
 ### Next Steps
 - 각 단계를 순서대로 CI/CD 파이프라인에서 apply
 - 01 apply 완료 후 02 실행, 02 완료 후 03 실행
+- CI/CD 설정 가이드: `docs/ci-cd-guide.md` 참조
 ```
 
 ## Security Notes

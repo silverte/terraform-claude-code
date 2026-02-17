@@ -6,6 +6,18 @@
 - Control Tower 미사용 엔터프라이즈 멀티 어카운트 환경
 - AWS Organizations + SCP 기반 거버넌스
 
+## 용어 정의
+
+| 사용자 대화 (한글) | 코드/디렉토리 | 설명 |
+|-------------------|--------------|------|
+| 조직 기반 설정 | `org-foundation` | AWS Organizations, OU, SCP, 중앙 보안, 공유 네트워크 |
+| 워크로드 배포 | `workload` | 애플리케이션 인프라 (VPC, EC2, ECS, RDS 등) |
+| 명세서 / spec 파일 | `specs/{name}-spec.yaml` | `/tf-spec`이 생성하는 YAML 요구사항 파일 |
+| 코드 생성 | `/tf-build`, `/tf-generate` | 명세서 기반 Terraform 코드 자동 생성 |
+| 종합 리뷰 | `/tf-review` | 보안/비용/품질 종합 검토 |
+
+> **규칙**: 사용자 대화에서는 한글 용어를, 코드/파일/디렉토리에서는 영어 식별자를 사용합니다.
+
 ## 핵심 워크플로우
 
 ### 권장 워크플로우 (3단계 - /tf-build 사용)
@@ -253,6 +265,12 @@ s3://{bucket}/
 ├── dev/terraform.tfstate
 ├── staging/terraform.tfstate
 └── prod/terraform.tfstate
+```
+
+### 부트스트랩
+State 백엔드가 없으면 `scripts/bootstrap-backend.sh`로 자동 생성:
+```bash
+./scripts/bootstrap-backend.sh <project-name> [region] [account-id]
 ```
 
 ## 금지 사항 (CRITICAL)

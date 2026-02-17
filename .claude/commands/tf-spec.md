@@ -145,6 +145,17 @@ AskUserQuestion으로 필요한 인프라 카테고리를 복수 선택하게 �
 8. **VPN**
    - 질문: "온프레미스 VPN 연결이 필요합니까? (y/n, 기본: n)"
 
+9. **DNS (Route53)**
+   - 질문: "도메인 관리(Route53)가 필요합니까? (y/n, 기본: n)"
+   - y 선택 시:
+     - "도메인명을 입력해주세요 (예: example.com)"
+     - "DNS 타입을 선택해주세요:"
+       - `1` 퍼블릭 DNS (인터넷에서 접근, 기본)
+       - `2` 프라이빗 DNS (VPC 내부 전용)
+       - `3` 둘 다
+     - ALB/NLB가 있는 경우: "로드밸런서를 도메인에 연결하시겠습니까? (y/n, 기본: y)"
+   - 비전문가 안내: "Route53은 도메인(예: api.example.com)을 서버 주소로 연결해주는 DNS 서비스입니다."
+
 #### 컴퓨팅 질문 흐름 (templates/compute.yaml 참조)
 
 1. **워크로드 타입**
@@ -193,6 +204,19 @@ AskUserQuestion으로 필요한 인프라 카테고리를 복수 선택하게 �
      - 타임아웃 (기본: 30초)
      - 트리거: API Gateway / S3 / SQS / EventBridge Schedule / 기타
      - VPC 내 실행 여부 (기본: false)
+
+6. **로드밸런서** (ECS, EKS, EC2+Auto Scaling 선택 시 자동 질문)
+   - 질문: "로드밸런서가 필요합니까? (y/n, 기본: ECS/EKS 선택 시 y)"
+   - y 선택 시:
+     - "로드밸런서 타입을 선택해주세요:"
+       - `1` ALB (HTTP/HTTPS 트래픽, 웹 서비스 권장, 기본)
+       - `2` NLB (TCP/UDP 트래픽, 고성능/저지연)
+     - 스키마: "인터넷에서 접근이 필요합니까?"
+       - `1` 인터넷 접근 가능 (internet-facing, 기본)
+       - `2` 내부 전용 (internal, VPC 내부만)
+     - HTTPS: "HTTPS를 사용하시겠습니까? (y/n, 기본: y)"
+       - y 선택 시: "ACM 인증서 ARN을 입력해주세요 (없으면 빈 값, 추후 설정)"
+   - 비전문가 안내: "로드밸런서는 여러 서버로 트래픽을 분산합니다. ALB는 웹 서비스에, NLB는 게임 서버 등 고성능 연결에 적합합니다."
 
 #### 데이터베이스 질문 흐름 (templates/database.yaml 참조)
 

@@ -68,3 +68,20 @@ networking:
     # customer_gateway_ip: ""
     # bgp_asn: 65000
     # static_routes: []
+
+  route53:
+    enabled: false
+    # hosted_zones: []
+    #   - domain_name: "example.com"
+    #     private: false                           # true: VPC 내부 전용, false: 퍼블릭
+    #     vpc_association: false                    # private zone일 때 연결할 VPC
+    #     records: []
+    #       - name: "api"
+    #         type: "A"                            # A | AAAA | CNAME | ALIAS
+    #         alias:
+    #           target: "alb"                      # alb | nlb | cloudfront | s3
+    #         # value: ""                          # CNAME, A 레코드 직접 값
+    #         # ttl: 300
+    #   - domain_name: "internal.example.com"
+    #     private: true
+    #     vpc_association: true

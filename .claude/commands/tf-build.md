@@ -12,6 +12,9 @@ YAML 명세서(spec.yaml)를 읽어 Terraform 코드를 생성하고, 즉시 보
 
 ## Arguments
 - **spec-file**: 명세서 경로 (예: specs/my-web-service-spec.yaml)
+- **--only** (선택): 특정 카테고리만 재생성 (예: `--only networking,compute`)
+  - Argument Parsing은 `/tf-generate`의 Argument Parsing 섹션과 동일한 규칙을 따릅니다
+  - org-foundation은 `--only` 미지원 (단계 간 의존성)
 
 ## 기존 커맨드와의 관계
 ```
@@ -104,7 +107,13 @@ Task(subagent_type="tf-module-developer", prompt="ECS 모듈 생성... \n## MCP 
 ### Phase 4: 품질 게이트 (자동 수정)
 
 생성 직후 자동으로 검증하고 수정합니다.
-**`/tf-review`와의 핵심 차이**: 방금 생성한 코드이므로 Critical/High 이슈는 사용자 확인 없이 바로 수정합니다.
+
+**자동 수정 정책 (`/tf-build` 전용)**:
+방금 생성한 코드이므로 Critical/High 이슈는 사용자 확인 없이 바로 수정합니다.
+
+> **적용 범위**: 이 정책은 `/tf-build`로 방금 생성된 코드에만 적용됩니다.
+> 기존 코드를 리뷰할 때는 `/tf-review`를 사용하며, 사용자 승인이 필요합니다.
+> **근거**: 방금 생성된 코드는 아직 사용자가 커스터마이징하지 않았으므로 자동 수정이 안전합니다.
 
 #### Step 1: 포맷팅 및 검증
 ```bash
@@ -142,14 +151,7 @@ Checkov 결과에서 Critical/High 이슈가 발견되면:
 - 리소스 삭제가 필요한 경우
 
 #### Step 4: 스타일 규칙 검증
-```
-- [ ] 리소스 블록 내부 순서: meta-args → args → blocks → tags → lifecycle
-- [ ] 복수 리소스 생성에 for_each 사용 (count는 조건부 생성에만)
-- [ ] 변수에 description, type 존재, 주요 변수에 validation 블록
-- [ ] 등호(=) 정렬 (연속된 인수)
-- [ ] sensitive = true 적용 (패스워드, 키 등)
-- [ ] Provider default_tags 블록 사용
-```
+`.claude/references/_validation-checklist.md`를 Read 도구로 읽어 "스타일 규칙 검증" 체크리스트를 적용합니다.
 위반 항목이 있으면 직접 수정합니다.
 
 ### Phase 5: 심층 리뷰 (병렬)
@@ -297,12 +299,7 @@ mkdir -p environments/org-foundation/03-shared-networking
 ### Phase 4-org: 품질 게이트 (자동 수정)
 
 3단계 각각에 대해 검증 및 자동 수정:
-```bash
-# 각 단계별 fmt + validate
-cd environments/org-foundation/01-organization && terraform fmt -recursive && terraform validate
-cd environments/org-foundation/02-security-baseline && terraform fmt -recursive && terraform validate
-cd environments/org-foundation/03-shared-networking && terraform fmt -recursive && terraform validate
-```
+`.claude/references/_validation-checklist.md`의 "org-foundation 검증 경로" 섹션을 Read 도구로 읽어 각 단계별 검증을 실행합니다.
 
 ```
 # 각 단계별 Checkov 스캔
@@ -368,20 +365,4 @@ Task(subagent_type="tf-module-developer", prompt="""
 
 ## Code Generation Rules
 
-1. **CLAUDE.md 코딩 표준 준수**: 파일 구조, 네이밍 규칙, 필수 태그
-2. **HCL 스타일 규칙 적용** (tf-module-developer에 내장된 HashiCorp Style Guide 기반 규칙):
-   - 블록 내부 순서: meta-args → args → blocks → tags → lifecycle
-   - `for_each` 우선 (`count`는 조건부에만)
-   - 변수 순서: required → optional → sensitive (각각 알파벳순)
-   - 등호 정렬, snake_case 네이밍
-3. **모듈 패턴 적용** (tf-module-developer에 내장된 패턴):
-   - 단일 책임 모듈, 조건부 리소스, dynamic 블록, 모듈 합성 출력 설계
-   - 모든 모듈에 `tests/main.tftest.hcl` 포함 (최소 3개 테스트)
-4. **State 관리 패턴**:
-   - Partial backend config (`backend.hcl`) 사용
-   - 환경별/단계별 state 파일 분리
-   - org-foundation 단계 간 의존성: remote state 또는 SSM parameter로 참조
-5. **보안 가이드라인 적용**: 시크릿 금지, 최소 권한, 암호화 기본 활성화
-6. **모든 변수에 description + type + validation**
-7. **모든 리소스에 태그 적용** (provider `default_tags` + 리소스별 `tags`)
-8. **Provider 설정**: `default_tags` 블록으로 공통 태그 적용, 멀티 어카운트는 `assume_role` 사용
+`.claude/references/_code-generation-rules.md`를 Read 도구로 읽어 모든 규칙을 적용합니다.

@@ -9,6 +9,25 @@ YAML 명세서(spec.yaml)를 읽어 Terraform 코드를 자동 생성합니다.
 
 ## Arguments
 - **spec-file**: 명세서 경로 (예: specs/my-web-service-spec.yaml)
+- **--only** (선택): 특정 카테고리만 재생성 (예: `--only networking,compute`)
+
+### Argument Parsing
+
+사용자 입력(`$ARGUMENTS`)을 파싱하여 spec-file과 옵션을 분리합니다:
+
+```
+입력 예시:
+  /tf-generate specs/my-app-spec.yaml
+  /tf-generate specs/my-app-spec.yaml --only networking
+  /tf-generate specs/my-app-spec.yaml --only networking,compute,database
+```
+
+**파싱 규칙:**
+1. 첫 번째 인자 → `spec-file` (필수)
+2. `--only` 뒤의 값 → 쉼표로 분리하여 카테고리 목록 생성
+3. 유효한 카테고리: `networking`, `compute`, `database`, `storage`, `security`, `monitoring`
+4. **org-foundation은 `--only` 미지원** (단계 간 의존성 때문)
+   - org-foundation spec에 `--only`를 사용하면 오류 메시지 출력 후 종료
 
 ## Execution Steps
 
@@ -41,6 +60,14 @@ mkdir -p $TARGET_DIR
 
 ### Phase 3: 모듈 확인 및 생성
 
+**`--only` 옵션이 지정된 경우:**
+- 지정된 카테고리만 처리합니다 (예: `--only networking` → networking 모듈만 확인/생성)
+- 기존 환경 파일(`environments/{env}/`)이 존재해야 합니다 (없으면 오류)
+- Phase 4에서 `main.tf`를 업데이트할 때 기존 모듈 호출은 유지하고, 해당 카테고리의 모듈 호출만 교체합니다
+- `variables.tf`, `outputs.tf`도 해당 카테고리 관련 항목만 업데이트합니다
+
+**전체 생성 (기본):**
+
 spec에서 enabled된 각 카테고리에 대해:
 
 1. `modules/` 에 해당 모듈이 있는지 확인
@@ -69,6 +96,9 @@ spec에서 enabled된 각 카테고리에 대해:
 | security.kms | modules/security/kms |
 | monitoring.cloudtrail | modules/monitoring/cloudtrail |
 | monitoring.config | modules/monitoring/config |
+| compute.alb | modules/compute/alb |
+| compute.nlb | modules/compute/nlb |
+| networking.route53 | modules/networking/route53 |
 
 ### Phase 4: 환경 파일 생성
 
@@ -174,14 +204,7 @@ terraform validate
 ```
 
 #### Step 2: 스타일 규칙 검증
-생성된 코드에 아래 규칙이 적용되었는지 확인합니다:
-- [ ] 리소스 블록 내부 순서: meta-args → args → blocks → tags → lifecycle
-- [ ] 복수 리소스 생성에 `for_each` 사용 (`count`는 조건부 생성에만)
-- [ ] 변수에 `description`, `type` 존재, 주요 변수에 `validation` 블록
-- [ ] 등호(`=`) 정렬 (연속된 인수)
-- [ ] `sensitive = true` 적용 (패스워드, 키 등)
-- [ ] Provider `default_tags` 블록 사용
-
+`.claude/references/_validation-checklist.md`를 Read 도구로 읽어 "스타일 규칙 검증" 체크리스트를 적용합니다.
 위반 항목이 있으면 생성 단계에서 직접 수정합니다.
 
 #### Step 3: 모듈 테스트 파일 확인
@@ -431,11 +454,7 @@ encrypt        = true
 ### Phase 5-org: 코드 품질 검증
 
 #### Step 1: 포맷팅 및 문법 검증
-```bash
-cd environments/org-foundation/01-organization && terraform fmt -recursive && terraform validate
-cd environments/org-foundation/02-security-baseline && terraform fmt -recursive && terraform validate
-cd environments/org-foundation/03-shared-networking && terraform fmt -recursive && terraform validate
-```
+`.claude/references/_validation-checklist.md`의 "org-foundation 검증 경로" 섹션을 Read 도구로 읽어 각 단계별 검증을 실행합니다.
 
 #### Step 2: 스타일 규칙 검증 (워크로드 Phase 5 Step 2와 동일 체크리스트 적용)
 
@@ -545,20 +564,4 @@ Task(subagent_type="tf-module-developer", prompt="""
 
 ## Code Generation Rules
 
-1. **CLAUDE.md 코딩 표준 준수**: 파일 구조, 네이밍 규칙, 필수 태그
-2. **HCL 스타일 규칙 적용** (tf-module-developer에 내장된 HashiCorp Style Guide 기반 규칙):
-   - 블록 내부 순서: meta-args → args → blocks → tags → lifecycle
-   - `for_each` 우선 (`count`는 조건부에만)
-   - 변수 순서: required → optional → sensitive (각각 알파벳순)
-   - 등호 정렬, snake_case 네이밍
-3. **모듈 패턴 적용** (tf-module-developer에 내장된 패턴):
-   - 단일 책임 모듈, 조건부 리소스, dynamic 블록, 모듈 합성 출력 설계
-   - 모든 모듈에 `tests/main.tftest.hcl` 포함 (최소 3개 테스트)
-4. **State 관리 패턴**:
-   - Partial backend config (`backend.hcl`) 사용
-   - 환경별/단계별 state 파일 분리
-   - org-foundation 단계 간 의존성: remote state 또는 SSM parameter로 참조
-5. **보안 가이드라인 적용**: 시크릿 금지, 최소 권한, 암호화 기본 활성화
-6. **모든 변수에 description + type + validation**
-7. **모든 리소스에 태그 적용** (provider `default_tags` + 리소스별 `tags`)
-8. **Provider 설정**: `default_tags` 블록으로 공통 태그 적용, 멀티 어카운트는 `assume_role` 사용
+`.claude/references/_code-generation-rules.md`를 Read 도구로 읽어 모든 규칙을 적용합니다.

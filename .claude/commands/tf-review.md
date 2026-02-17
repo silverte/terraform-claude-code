@@ -314,6 +314,9 @@ which tfsec && tfsec $PATH --minimum-severity MEDIUM
 
 ## Phase 6: 자동 수정 (Auto-Fix)
 
+> **`/tf-build`와의 정책 차이**: `/tf-build`의 Phase 4는 방금 생성된 코드를 대상으로 하므로 사용자 확인 없이 자동 수정합니다.
+> `/tf-review`는 기존 코드(사용자가 수정했을 수 있는 코드)를 대상으로 하므로 반드시 사용자 승인을 받습니다.
+
 **중요**: Phase 1-5의 분석은 서브에이전트(tf-security-reviewer, tf-cost-analyzer)에 위임하지만, Phase 6의 코드 수정은 **메인 세션에서 직접 수행**합니다. 서브에이전트는 read-only(Write/Edit 금지)이므로 코드를 수정할 수 없습니다.
 
 리뷰 리포트 출력 후, Critical/High 이슈가 있으면 자동 수정 프로세스를 실행합니다.

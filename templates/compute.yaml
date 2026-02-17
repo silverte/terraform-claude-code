@@ -91,3 +91,52 @@ compute:
     #     environment_variables: {}
     #     vpc_enabled: false
     #     triggers: []                              # api-gateway | s3 | sqs | schedule
+
+  alb:
+    enabled: false
+    # load_balancers: []
+    #   - name: ""
+    #     scheme: "internet-facing"               # internet-facing | internal
+    #     listeners:
+    #       - port: 443
+    #         protocol: "HTTPS"
+    #         certificate_arn: ""
+    #         default_action: "forward"
+    #       - port: 80
+    #         protocol: "HTTP"
+    #         default_action: "redirect_https"
+    #     target_groups:
+    #       - name: "api"
+    #         port: 8080
+    #         protocol: "HTTP"
+    #         target_type: "ip"                    # ip (Fargate) | instance (EC2) | lambda
+    #         health_check:
+    #           path: "/health"
+    #           interval: 30
+    #           healthy_threshold: 3
+    #           unhealthy_threshold: 3
+    #     access_logs:
+    #       enabled: false
+    #       bucket: ""
+    #     waf_association: false                   # security.waf.enabled 시 자동 연동
+
+  nlb:
+    enabled: false
+    # load_balancers: []
+    #   - name: ""
+    #     scheme: "internal"                       # internet-facing | internal
+    #     listeners:
+    #       - port: 443
+    #         protocol: "TLS"
+    #         certificate_arn: ""
+    #       - port: 80
+    #         protocol: "TCP"
+    #     target_groups:
+    #       - name: "api"
+    #         port: 8080
+    #         protocol: "TCP"
+    #         target_type: "ip"
+    #         health_check:
+    #           protocol: "TCP"
+    #           interval: 30
+    #     cross_zone_load_balancing: true
