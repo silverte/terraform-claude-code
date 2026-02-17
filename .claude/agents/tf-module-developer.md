@@ -198,7 +198,18 @@ variable "environment" {
   }
 }
 
+variable "owner_team" {
+  description = "담당 팀명 (태그에 사용)"
+  type        = string
+}
+
 # Optional variables (with default)
+variable "cost_center" {
+  description = "비용 센터 코드 (태그에 사용)"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "모든 리소스에 적용할 태그"
   type        = map(string)
@@ -265,14 +276,15 @@ output "summary" {
 locals {
   # Naming convention
   name_prefix = "${var.project_name}-${var.environment}"
-  
-  # Common tags
+
+  # Common tags (CLAUDE.md 필수 태그 기준)
   common_tags = merge(
     {
       Project     = var.project_name
       Environment = var.environment
       ManagedBy   = "terraform"
-      Module      = "module-name"
+      Owner       = var.owner_team
+      CostCenter  = var.cost_center
     },
     var.tags
   )
