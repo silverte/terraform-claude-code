@@ -39,6 +39,5 @@
       "Bash(aws:organizations create-account)",
       "Bash(aws:organizations close-account)"
     ]
-  },
-  "model": "opus"
+  }
 }

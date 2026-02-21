@@ -3,40 +3,6 @@
     "t": {
       "command": "node",
       "args": ["/Users/born2k/.claude/plugins/marketplaces/omc/bridge/mcp-server.cjs"]
-    },
-    "awslabs.core-mcp-server": {
-      "command": "uvx",
-      "args": ["awslabs.core-mcp-server@latest"],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR",
-        "solutions-architect": "true"
-      },
-      "disabled": true
-    },
-    "awslabs.terraform-mcp-server": {
-      "command": "uvx",
-      "args": ["awslabs.terraform-mcp-server@latest"],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      },
-      "disabled": false
-    },
-    "awslabs.aws-documentation-mcp-server": {
-      "command": "uvx",
-      "args": ["awslabs.aws-documentation-mcp-server@latest"],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR",
-        "AWS_DOCUMENTATION_PARTITION": "aws"
-      },
-      "disabled": false
-    },
-    "awslabs.well-architected-security-mcp-server": {
-      "command": "uvx",
-      "args": ["--from", "awslabs.well-architected-security-mcp-server", "well-architected-security-mcp-server"],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      },
-      "disabled": false
     }
   }
 }
